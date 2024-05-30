@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Amazon sponsored items blocker
-// @namespace    https://github.com/Stefan-Code/amazon-sponsored-items-blocker
+// @name         Amazon item blocker
+// @namespace    https://github.com/zakkhoyt/greasemonkey/blob/main/amazon_sponsor.js
 // @version      0.1
-// @description  Blocks sponsored search results on amazon.com, amazon.co.uk and amazon.de
-// @author       Stefan-Code
+// @description  Blocks sponsored search results, items tagges as "Best Seller", "Overall Pick", etc... Works on amazon.com, amazon.co.uk and amazon.de
+// @author       Zakkus Hoyt
 // @include      *://www.amazon.de/*
 // @include      *://www.amazon.com/*
 // @include      *://www.amazon.co.uk/*
@@ -12,16 +12,84 @@
 // @run-at document-end
 // ==/UserScript==
 
-// TODO: 
+// This script was dervied from https://github.com/Stefan-Code/amazon-sponsored-items-blocker
+
+// References:
+// * https://www.w3schools.com/Js/js_debugging.asp
+// * [Use your fav editor](https://violentmonkey.github.io/posts/how-to-edit-scripts-with-your-favorite-editor/)
+
+// Notes;
+// * add 'debugger;' to script, reload page to hit breakpoint
+//   * inspect elements and properties using breakpoint
+
+// TODO:
+// # Block items of these types:
+// * [x] "Sponsored"
 // * [x] "Best Seller"
+//    * [ ] False triggers by:
+//        * "Big Spring Deal"
+//   * [ ] Omit "Purchased Sep 2023"
 // * [ ] "Overall Pick"
+//
+// # Reactions
+// * [ ] Stack effects vs lilo
+//
+// # Questions
+// ## Javascript
+// * [ ] How to log at different levels?
+//
+// ## CSS/Xpath
+// * [ ] How to match plain text (instead of css class)
+// * [ ] How to match by id (instead of css class)
+//
+// ## greasemonkey, violentmonkey, etc...
+// * [ ] How to offer UI configuration?
+// * [ ] Non-volatile storage?
+// * [ ] How to submit a script to public tools?
+//
+// # Code / performance improvements
+// * [ ] Use data structs to make searching more efficient (fewer looping permutations)
+// * [ ] Use data structs to apply different css changes depending on what was found/matched
+
+class TargetPlan {
+  // Declare: every Color instance has a private field called #values.
+  // #values;
+
+  #containerCSSClass = "";
+  #targetCSSClassItems = [];
+  #targetInnerTextItems = [];
+  
+  constructor(
+    containerCSSClass,
+    targetCSSClassItems,
+    targetInnerTextItems
+  ) {
+    this.#containerCSSClass = containerCSSClass;
+    this.#targetCSSClassItems = targetCSSClassItems;
+    this.#targetInnerTextItems = targetInnerTextItems;
+  }
+
+  getContainerCSSClass() {
+    return this.#containerCSSClass;
+  }
+
+  getTargetCSSClassItems() {
+    return this.#targetCSSClassItems;
+  }
+
+  getTargetInnerTextItems() {
+    return this.#targetInnerTextItems;
+  }
+}
+
+
 
 $ = jQuery.noConflict(true);
 $(document).ready(function() {
-    console.log("amazon-sponsored-items-blocker: loaded");
-    var count = 0;
+    console.log("amazon-item-block: did load");
 
-    
+    // Counter for how many items we have changed
+    var count = 0;
 
     // The css classes that we want to recursively inspect
     const cssParents = [
@@ -54,7 +122,9 @@ $(document).ready(function() {
             for (let y = 0; y < cssBestSellerTargets.length; y++) {
                 let cssBestSellerTarget = cssBestSellerTargets[y];
                 if ($(this).find(cssBestSellerTarget).length > 0) {
-                    console.log("amazon-sponsored-items-blocker: cssParent[" + i + "] (" + cssParent + ") contains a 'Best Seller' match: " + cssBestSellerTarget);
+                    console.log("amazon-item-block: cssParent[" + i + "] (" + cssParent + ") contains a 'Best Seller' match: " + cssBestSellerTarget);
+
+                    // debugger;
 
                     // The action(s) to take on cssParent if any cssBestSellerTarget is found within
                     // $(this).css('display', 'none');
@@ -63,29 +133,24 @@ $(document).ready(function() {
                     count++;
                 }
             }
-            
+
             // Sponsored
             for (let y = 0; y < cssSponsorTargets.length; y++) {
                 let cssSponsorTarget = cssSponsorTargets[y];
                 if ($(this).find(cssSponsorTarget).length > 0) {
-                    // console.log("amazon-sponsored-items-blocker: Object " + i + " contains a sponsor tag (" + cssParent + " " + cssSponsorTarget + ")");
-                    // console.log("amazon-sponsored-items-blocker: " + cssParent + "[" + i + "] contains a best seller: " + cssBestSellerTarget);
-                    console.log("amazon-sponsored-items-blocker: cssParent[" + i + "] (" + cssParent + ") contains a 'Sponsor' match: " + cssSponsorTarget);
+                    console.log("amazon-item-block: cssParent[" + i + "] (" + cssParent + ") contains a 'Sponsor' match: " + cssSponsorTarget);
 
                     // The action to take on cssParent if any cssSponsorTarget is found within
                     // $(this).css('display', 'none');
                     $(this).css('background-color', 'rgb(128, 0, 0)');
                     $(this).css('opacity', '0.25');
-                    // $(this).css(cssRemoveKey, cssRemoveValue);
                     count++;
                 }
             }
-
-
         });
     }
 
-    console.log("amazon-sponsored-items-blocker: " + count + " sponsors/ads removed.");
+    console.log("amazon-item-block: " + count + " sponsors/ads removed.");
 });
 
 // // [DONE] Sample cell with text/icon in it
