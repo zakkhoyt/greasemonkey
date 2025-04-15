@@ -19,7 +19,7 @@
 // * [Use your fav editor](https://violentmonkey.github.io/posts/how-to-edit-scripts-with-your-favorite-editor/)
 
 // Notes;
-// * add 'debugger;' to script, reload page to hit breakpoint
+// * To use breakpoints, insert the line `debugger;` which is like a programmatic breakpoint. Reload page to hit breakpoint. 
 //   * inspect elements and properties using breakpoint
 
 // TODO:
@@ -181,3 +181,6 @@ $(document).ready(function() {
 // s-widget
 // rhf-border
 
+// yep~~~~
+
+// Another
