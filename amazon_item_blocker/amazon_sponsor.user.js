@@ -88,6 +88,121 @@ class TargetPlan {
 }
 
 
+// class AmazonProductExtractor {
+//   // function  
+// }
+
+function extractProductImageUrl(html) {
+  try {
+    console.log("amazon-debug 131");  
+    // let result = url.match(/^(.*https:\/\/.*\/dp\/)(.*)(\?.*)$/);
+    let imgResult = html.match(/(var iUrl = ")(.*)";/);
+    console.log("amazon-debug 132");
+    
+    if ( imgResult == null ){
+      console.log("amazon-debug 133");
+      console.log("amazon-imgResult: null");
+      return null;
+    } else {
+      console.log("amazon-debug 134");
+      console.log("amazon-imgResult[0]: " + imgResult[0]);
+      console.log("amazon-imgResult[1]: " + imgResult[1]);
+      console.log("amazon-imgResult[2]: " + imgResult[2]);
+      console.log("amazon-imgResult[3]: " + imgResult[3]);
+      console.log("amazon-debug 135");
+    }
+    console.log("amazon-debug 136");
+
+    let imgUrl = imgResult[2];
+    console.log("amazon-debug 150");
+
+    if ( imgUrl == null ){
+      // some_variable is either null or undefined
+      console.log("amazon-debug 151");
+      console.log("amazon-imgUrl: null|undefined");
+    } else {
+      console.log("amazon-debug 152");
+      console.log("amazon-imgUrl: " + imgUrl);
+    }
+    console.log("amazon-debug 153");
+    return imgUrl;
+
+  } catch(err) {
+    console.log("amazon-debug 180");        
+    console.error("amazon-debug [ERROR] err.name: " + err.name + " err.message: " + err.message); 
+    debugger;
+    console.log("amazon-debug 181");
+    return null;
+  }
+}
+
+
+function extractProductImageId(imgUrl) {
+
+  // amazon-imgUrl: https://m.media-amazon.com/images/I/517W--vk2LL.__AC_SX300_SY300_QL70_ML2_.jpg
+
+  // TODO; Extract imgID from imgUrl
+
+  // https://m.media-amazon.com/images/I/517W--vk2LL.__AC_S2600_SY200.jpg
+  // baseURL: https://m.media-amazon.com/images/I/
+  // imgID: 517W--vk2LL
+  // imgSize: .__AC_SX600_SY200
+  //   .__AC_SX600
+  //   .__AC_SY600
+  //   .SY200
+  // imgFormat: .jpg
+  try {
+    let imageUrlRegex = imgUrl.match(/^(.*https:\/\/.*\/I\/)(.*)\.(.*)\.(.*)$/)
+
+    // [
+    //   "https://m.media-amazon.com/images/I/517W--vk2LL.__AC_SX300_SY300_QL70_ML2_.jpg", // 0: 
+    //   "https://m.media-amazon.com/images/I/", // 1: 
+    //   "517W--vk2LL", // 2: 
+    //   "__AC_SX300_SY300_QL70_ML2_", // 3: 
+    //   "jpg", // 4:             
+    // ]
+    console.log("amazon-debug 170");  
+
+    // console.log("amazon-imageUrlRegex[0]: " + imageUrlRegex[0]);
+    // console.log("amazon-imageUrlRegex[1] (imageBaseUrl): " + imageUrlRegex[1]);
+    // console.log("amazon-imageUrlRegex[2] (imageId): " + imageUrlRegex[2]);
+    // console.log("amazon-imageUrlRegex[3] (imageQuality): " + imageUrlRegex[3]);
+    // console.log("amazon-imageUrlRegex[4] (imageFormat): " + imageUrlRegex[4]);
+    // console.log("amazon-debug 171");
+
+    let imageBaseUrl = imageUrlRegex[1]
+    let imageId = imageUrlRegex[2]
+    let imageQuality = imageUrlRegex[3]
+    let imageFormat = imageUrlRegex[4]
+    console.log("amazon-extractImageId: imageBaseUrl: " + imageBaseUrl);
+    console.log("amazon-extractImageId: imageId: " + imageId);
+    console.log("amazon-extractImageId: imageQuality: " + imageQuality);
+    console.log("amazon-extractImageId: imageFormat: " + imageFormat);
+    console.log("amazon-debug 177");
+
+    return imageId;
+    
+    // if ( imageUrlRegex == null ){
+    //   console.log("amazon-debug 172");
+    //   console.log("amazon-urlRegex: null");
+    // } else {
+    //   console.log("amazon-debug 173");
+    //   for(var i = 0; i < imageUrlRegex.length; ++i){
+    //     console.log("amazon-urlRegex[i]: i: " + i + " imageUrlRegex[i]" + imageUrlRegex[i]);
+    //   }
+    //   console.log("amazon-debug 174");
+    // }
+    // console.log("amazon-debug 175");
+  } catch(err) {
+    console.log("amazon-debug 180");        
+    console.error("amazon-debug [ERROR] err.name: " + err.name + " err.message: " + err.message); 
+    debugger;
+    console.log("amazon-debug 181");
+    return null;
+  }
+}
+
+
 
 $ = jQuery.noConflict(true);
 $(document).ready(function() {
@@ -252,159 +367,21 @@ $(document).ready(function() {
       console.log("amazon-debug 62");
       console.log("amazon-html: null");
     } else {
-      console.log("amazon-debug 63");
-
-      console.log("amazon-html: " + html.length);
-      console.log("amazon-debug 63.5");
-      console.log("amazon-html: " + html);
-      console.log("amazon-debug 64");
-
-      console.log("amazon-debug 130");
-
+      
+      console.log("amazon-debug 200");
       try {
-        console.log("amazon-debug 131");  
-        // let result = url.match(/^(.*https:\/\/.*\/dp\/)(.*)(\?.*)$/);
-        let imgResult = html.match(/(var iUrl = ")(.*)";/);
-        console.log("amazon-debug 132");
-        
-
-
-        if ( imgResult == null ){
-          console.log("amazon-debug 133");
-          console.log("amazon-imgResult: null");
-        } else {
-          console.log("amazon-debug 134");
-          console.log("amazon-imgResult[0]: " + imgResult[0]);
-          console.log("amazon-imgResult[1]: " + imgResult[1]);
-          console.log("amazon-imgResult[2]: " + imgResult[2]);
-          console.log("amazon-imgResult[3]: " + imgResult[3]);
-          console.log("amazon-debug 135");
+        let imgUrl = extractProductImageUrl(html);
+        console.log("amazon-imgUrl: " + imgUrl);
+        console.log("amazon-debug 201");
   
-        }
-        console.log("amazon-debug 136");
-  
-        let imgUrl = imgResult[2];
-        console.log("amazon-debug 150");
-  
-        if ( imgUrl == null ){
-          // some_variable is either null or undefined
-          console.log("amazon-debug 151");
-          console.log("amazon-imgUrl: null|undefined");
-        } else {
-          console.log("amazon-debug 152");
-          console.log("amazon-imgUrl: " + imgUrl);
-        }
-        console.log("amazon-debug 153");
-
-
-        // amazon-imgUrl: https://m.media-amazon.com/images/I/517W--vk2LL.__AC_SX300_SY300_QL70_ML2_.jpg
-
-        // TODO; Extract imgID from imgUrl
-
-        // https://m.media-amazon.com/images/I/517W--vk2LL.__AC_S2600_SY200.jpg
-        // baseURL: https://m.media-amazon.com/images/I/
-        // imgID: 517W--vk2LL
-        // imgSize: .__AC_SX600_SY200
-        //   .__AC_SX600
-        //   .__AC_SY600
-        //   .SY200
-        // imgFormat: .jpg
-        try {
-          let imageUrlRegex = imgUrl.match(/^(.*https:\/\/.*\/I\/)(.*)\.(.*)\.(.*)$/)
-
-
-          // [
-          //   "https://m.media-amazon.com/images/I/517W--vk2LL.__AC_SX300_SY300_QL70_ML2_.jpg", // 0: 
-          //   "https://m.media-amazon.com/images/I/", // 1: 
-          //   "517W--vk2LL", // 2: 
-          //   "__AC_SX300_SY300_QL70_ML2_", // 3: 
-          //   "jpg", // 4:             
-          // ]
-          console.log("amazon-debug 170");  
-    
-          // console.log("amazon-imageUrlRegex[0]: " + imageUrlRegex[0]);
-          // console.log("amazon-imageUrlRegex[1] (imageBaseUrl): " + imageUrlRegex[1]);
-          // console.log("amazon-imageUrlRegex[2] (imageId): " + imageUrlRegex[2]);
-          // console.log("amazon-imageUrlRegex[3] (imageQuality): " + imageUrlRegex[3]);
-          // console.log("amazon-imageUrlRegex[4] (imageFormat): " + imageUrlRegex[4]);
-          // console.log("amazon-debug 171");
-
-          let imageBaseUrl = imageUrlRegex[1]
-          let imageId = imageUrlRegex[2]
-          let imageQuality = imageUrlRegex[3]
-          let imageFormat = imageUrlRegex[4]
-          console.log("amazon-extractImageId: imageBaseUrl: " + imageBaseUrl);
-          console.log("amazon-extractImageId: imageId: " + imageId);
-          console.log("amazon-extractImageId: imageQuality: " + imageQuality);
-          console.log("amazon-extractImageId: imageFormat: " + imageFormat);
-          console.log("amazon-debug 177");
+        let imageId = extractProductImageId(imgUrl);
+        console.log("amazon-imageId: " + imageId);
+        console.log("amazon-debug 202");
           
-          // if ( imageUrlRegex == null ){
-          //   console.log("amazon-debug 172");
-          //   console.log("amazon-urlRegex: null");
-          // } else {
-          //   console.log("amazon-debug 173");
-          //   for(var i = 0; i < imageUrlRegex.length; ++i){
-          //     console.log("amazon-urlRegex[i]: i: " + i + " imageUrlRegex[i]" + imageUrlRegex[i]);
-          //   }
-          //   console.log("amazon-debug 174");
-          // }
-          // console.log("amazon-debug 175");
-        } catch(err) {
-          console.log("amazon-debug 180");        
-          console.error("amazon-debug [ERROR] err.name: " + err.name + " err.message: " + err.message); 
-          debugger;
-          console.log("amazon-debug 181");
-        }
-        
-    
-      
+      } catch (error) {
+        console.error("amazon-debug [ERROR] err.name: " + err.name + " err.message: " + err.message); 
+        debugger;    
       }
-      catch(err) {
-        console.log("amazon-debug 180");        
-        console.error("amazon-debug [ERROR] err.name: " + err.name + " err.message: " + err.message); debugger;
-        console.log("amazon-debug 181");
-      } 
-  
-      
-//       for(var i = 0; i < imgResult.length; ++i){
-//         console.log("amazon-imgResult[i]: i: " + i + " imgResult[i]" + imgResult[i]);
-//       }
-
-      // if ( imgResult == null ){
-      //   console.log("amazon-debug 131");
-      //   console.log("amazon-imgResult: null");
-      // } else {
-
-
-
-      //   console.log("amazon-imgResult[0]: " + imgResult[0]);
-      //   console.log("amazon-imgResult[1]: " + imgResult[1]);
-      //   console.log("amazon-imgResult[2]: " + imgResult[2]);
-      //   console.log("amazon-imgResult[3]: " + imgResult[3]);
-      //   console.log("amazon-debug 132");
-
-      // }
-      // console.log("amazon-debug 133");
-
-      // let imgUrl = imgResult[2];
-      // console.log("amazon-debug 150");
-
-      // if ( imgUrl == null ){
-      //   // some_variable is either null or undefined
-      //   console.log("amazon-debug 151");
-      //   console.log("amazon-imgUrl: null|undefined");
-      // } else {
-      //   console.log("amazon-debug 152");
-      //   console.log("amazon-imgUrl: " + imgUrl);
-      // }
-      // console.log("amazon-debug 153");
-
-
-
-
-
-
     }
 
 //     // let imageClass = "a-dynamic-image p13n-sc-dynamic-image p13n-product-image";
