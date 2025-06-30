@@ -3,7 +3,7 @@
 // @namespace    https://github.com/zakkhoyt/greasemonkey/blob/main/amazon_sponsor.js
 // @version      0.1
 // @description  Blocks sponsored search results, items tagges as "Best Seller", "Overall Pick", etc... Works on amazon.com, amazon.co.uk and amazon.de
-// @author       Zakkus Hoyt
+// @author       Zakkus Hoytsd
 // @include      *://www.amazon.de/*
 // @include      *://www.amazon.com/*
 // @include      *://www.amazon.co.uk/*
@@ -130,7 +130,7 @@ function extractProductImageUrl(html) {
   } catch(err) {
     console.log("amazon-debug 180");        
     console.error("amazon-debug [ERROR] err.name: " + err.name + " err.message: " + err.message); 
-    debugger;
+    // debugger;
     console.log("amazon-debug 181");
     return null;
   }
@@ -196,7 +196,7 @@ function extractProductImageId(imgUrl) {
   } catch(err) {
     console.log("amazon-debug 180");        
     console.error("amazon-debug [ERROR] err.name: " + err.name + " err.message: " + err.message); 
-    debugger;
+    // debugger;
     console.log("amazon-debug 181");
     return null;
   }
@@ -254,6 +254,9 @@ $(document).ready(function() {
                     $(this).css('border-color', '#000080');
                     $(this).css('border-style', 'dashed');
                     $(this).css('border-width', '5px');
+
+                    // Remove the element
+                    // this.remove();
                     count++;
                 }
             }
@@ -268,6 +271,168 @@ $(document).ready(function() {
                     // $(this).css('display', 'none');
                     $(this).css('background-color', 'rgb(128, 0, 0)');
                     $(this).css('opacity', '0.25');
+
+                    // this.remove();
+
+
+                    
+
+
+                    let button01 = document.createElement("button");
+                    button01.innerHTML = "But 01";
+                    // button01.onclick = function () {
+                    //   alert("button01 clicked");
+                    // };
+                    button01.onclick = function (event) {
+                        // During onclick, we can read the modifier key but that's about it. 
+                        // For keyboard events, see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code                      
+                        if (event.ctrlKey && event.shiftKey && event.altKey) {
+                            alert("button01 clicked with the ctrl, shift and alt key.");
+                        } else if (event.ctrlKey && event.shiftKey) {
+                            alert("button01 clicked with the ctrl and shift key.");
+                        } else if (event.ctrlKey && event.altKey) {
+                            alert("button01 clicked with the ctrl and alt key.");
+                        } else if (event.shiftKey && event.altKey) {
+                            alert("button01 clicked with the shift and alt key.");
+                        } else if (event.ctrlKey) {
+                            alert("button01 clicked with ctrlKey.");
+                        } else if (event.shiftKey) {
+                            alert("button01 clicked with shiftKey.");
+                        } else if (event.altKey) {
+                            alert("button01 clicked with optKey (altKey).");
+                        } else if (event.metaKey) {
+                            alert("button01 clicked with commandKey (metaKey).");
+                        } else {
+                            alert("button01 clicked: " + event.key);
+                        }
+                    };
+                    // this.appendChild(button01);
+
+                    let button02 = document.createElement("button");
+                    button02.innerHTML = "But 02";
+                    button02.onclick = async function setClipboard(text) {
+                      const type = "text/plain";
+                      const clipboardItemData = {
+                        [type]: text,
+                      };
+                      const clipboardItem = new ClipboardItem(clipboardItemData);
+                      
+                      
+                      await navigator.clipboard.write([clipboardItem]);
+                      console.log(`Copied the text: ${text}`);
+                      alert(`Copied the text: ${text}`);
+                      alert("Copied the text: " + text);
+                    }
+
+                    let button03 = document.createElement("button");
+                    button03.innerHTML = "Copy MD";
+                    button03.id = "a-autoid-3-announce";
+                    // button03.class = "a-button-text";
+                    button03.class = "a-icon a-icon-cart";
+                    this.appendChild(button03);
+
+                    // We can pass info tot he click function with an event listener
+                    button03.addEventListener("click", () => setClipboard("# Some Amazon Item\n* [link](https://amazon.com/blah)"));
+                    async function setClipboard(text) {
+                      const type = "text/plain";
+                      const clipboardItemData = {
+                        [type]: text,
+                      };
+                      const clipboardItem = new ClipboardItem(clipboardItemData);
+                                            
+                      await navigator.clipboard.write([clipboardItem]);
+                      console.log(`Copied the text: ${text}`);
+                      alert(`Copied the text: ${text}`);
+                      alert("Copied the text: " + copyText.value);
+                    }
+
+                    // TODO: zakkhoyt - format markdown to paste to clipboard
+                    // this.appendChild(button);
+                    // obj.appendChild(button01);
+                    // obj.appendChild(button02);
+                    // obj.appendChild(button03);
+                    
+                    // "Add to Cart" button sample
+                    // <button name="submit.addToCart" aria-label="Add to cart" class="a-button-text" type="button" id="a-autoid-3-announce">Add to cart</button>
+                    // class="a-button-text" 
+                    // id="a-autoid-3-announce"
+                    //
+                    // <span class="a-button-inner">
+                    // <i class="a-icon a-icon-cart"></i><button name="submit.addToCart" aria-label="Add to cart" class="a-button-text" type="button" id="a-autoid-1-announce">Add to cart</button></span>
+                    //
+                    // document.activeElement.getHTML();
+                    // The getElementsByTagName() 
+                    // The getElementsByClassName() 
+                    //
+                    // obj.getElementById("a-autoid-3-announce")
+                    // var s = document.getElementById(id);
+                    // s.value = newvalue;
+                    //
+                    // // will select all the elements whose id starts with  "digit"
+                    // let bes = obj.querySelectorAll('[id^="a-autoid-"]');
+                    // console.log(`bes.length: ${bes.length}`);
+                    // bes.forEach(be => {
+                    //   // console.log(`be.id: ${be.id}`);
+                    //   console.log(`Appending button03 to be.id: ${be.id}`);
+                    //   be.appendChild(button03);
+                    // });
+                    //
+                    // if ( bes != null ){
+                    //   bes[0].appendChild(button03);
+                    // } else {
+                    //   obj.appendChild(button03);
+                    // }
+
+
+                    // TODO: zakkhoyt - try on full page to control behavoir (defaults)
+                    // obj.addEventListener(
+                    //   "keydown",
+                    //   (event) => 
+                    // {
+
+                    //     alert("keyDown -> event.key: " + event.key);
+
+                    //     if (event.defaultPrevented) {
+                    //       return; // Do nothing if the event was already processed
+                    //     }
+
+                        
+                    //     switch (event.key) {
+                    //       case "ArrowDown":
+                    //         // Do something for "down arrow" key press.
+                    //         break;
+                    //       case "ArrowUp":
+                    //         // Do something for "up arrow" key press.
+                    //         break;
+                    //       case "ArrowLeft":
+                    //         // Do something for "left arrow" key press.
+                    //         break;
+                    //       case "ArrowRight":
+                    //         // Do something for "right arrow" key press.
+                    //         break;
+                    //       case "Enter":
+                    //         // Do something for "enter" or "return" key press.
+                    //         break;
+                    //       case " ":
+                    //         // Do something for "space" key press.
+                    //         break;
+                    //       case "Escape":
+                    //         // Do something for "esc" key press.
+                    //         break;
+                    //       case "z":
+                    //         // Do something for "esc" key press.
+
+                    //         break;
+                    //       default:
+                    //         return; // Quit when this doesn't handle the key event.
+                    //     }
+
+                    //     // Cancel the default action to avoid it being handled twice
+                    //     event.preventDefault();
+                    //   },
+                    //   true,
+                    // );
+
                     count++;
                 }
             }
