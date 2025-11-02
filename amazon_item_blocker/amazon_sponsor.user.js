@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Amazon item blocker
-// @namespace    https://github.com/zakkhoyt/greasemonkey/blob/main/amazon_sponsor.js
+// @namespace    https://github.com/zakkhoyt/greasemonkey/blob/main/amazon_item_blocker/amazon_sponsor.user.js
 // @version      0.1
 // @description  Blocks sponsored search results, items tagges as "Best Seller", "Overall Pick", etc... Works on amazon.com, amazon.co.uk and amazon.de
 // @author       Zakkus Hoytsd
