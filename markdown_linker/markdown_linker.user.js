@@ -97,6 +97,11 @@
     // Type: string | null
     // Reference: https://developer.mozilla.org/en-US/docs/Web/API/URL
     let targetUrl = null;
+    
+    // Event handlers for menu dismissal (stored so they can be removed)
+    // Type: Function | null
+    let menuClickHandler = null;
+    let menuEscapeHandler = null;
 
     // ============================================================================
     // LOGGING UTILITIES
@@ -722,14 +727,14 @@
             top: ${y}px;
             background: white;
             border: 1px solid #ccc;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            padding: 8px 0;
+            border-radius: 3px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+            padding: 2px 0;
             z-index: 999999;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 14px;
-            min-width: 200px;
-            max-width: 300px;
+            font-size: 11px;
+            min-width: 150px;
+            max-width: 250px;
         `;
         log('Did create menu element');
 
@@ -745,7 +750,7 @@
             const linkText = getLinkText(anchor);
             if (linkText) {
                 log(`Did get link text, adding to options: "${linkText}"`);
-                options.push({ label: `Link Text: "${truncate(linkText, 30)}"`, getValue: () => linkText });
+                options.push({ label: `Link Text: "${truncate(linkText, 25)}"`, getValue: () => linkText });
             } else {
                 log('No link text available');
             }
@@ -756,7 +761,7 @@
         const selectedText = getSelectedText();
         if (selectedText) {
             log(`Did get selected text, adding to options: "${selectedText}"`);
-            options.push({ label: `Selected Text: "${truncate(selectedText, 30)}"`, getValue: () => selectedText });
+            options.push({ label: `Selected Text: "${truncate(selectedText, 25)}"`, getValue: () => selectedText });
         } else {
             log('No selected text available');
         }
@@ -765,7 +770,7 @@
         const pageTitle = getPageTitle();
         if (pageTitle) {
             log(`Did get page title, adding to options: "${pageTitle}"`);
-            options.push({ label: `Page Title: "${truncate(pageTitle, 30)}"`, getValue: () => pageTitle });
+            options.push({ label: `Page Title: "${truncate(pageTitle, 25)}"`, getValue: () => pageTitle });
         } else {
             log('No page title available');
         }
@@ -775,7 +780,7 @@
             const metaDesc = getMetaDescription();
             if (metaDesc) {
                 log(`Did get meta description, adding to options: "${metaDesc}"`);
-                options.push({ label: `Meta Description: "${truncate(metaDesc, 30)}"`, getValue: () => metaDesc });
+                options.push({ label: `Meta Description: "${truncate(metaDesc, 25)}"`, getValue: () => metaDesc });
             } else {
                 log('No meta description available');
             }
@@ -784,8 +789,6 @@
         // Always add custom title option
         log('Adding custom title option');
         options.push({ label: 'Custom Title...', getValue: promptCustomTitle });
-        log('Adding cancel option');
-        options.push({ label: 'Cancel', getValue: () => null, isCancel: true });
         
         log(`Did build ${options.length} menu options`);
 
@@ -796,12 +799,11 @@
             const item = document.createElement('div');
             item.textContent = option.label;
             item.style.cssText = `
-                padding: 8px 16px;
+                padding: 4px 10px;
                 cursor: pointer;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                ${option.isCancel ? 'border-top: 1px solid #eee; margin-top: 4px; color: #666;' : ''}
             `;
 
             item.addEventListener('mouseenter', () => {
@@ -814,11 +816,6 @@
 
             item.addEventListener('click', () => {
                 log(`Menu item clicked: "${option.label}"`);
-                if (option.isCancel) {
-                    log('Cancel clicked, will remove menu');
-                    removeMenu();
-                    return;
-                }
 
                 log('Will get title value from option');
                 const title = option.getValue();
@@ -874,12 +871,37 @@
 
         // setTimeout with 0ms delay defers execution to next event loop
         // This prevents the current click event from immediately triggering the outside click handler
-        // { once: true } automatically removes listener after first trigger
+        // Use capture phase to intercept click before it reaches target elements
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#options
         log('Will schedule outside click listener');
         setTimeout(() => {
-            document.addEventListener('click', removeMenu, { once: true });
-            log('Did add outside click listener');
+            // Create handler functions so we can remove them when either one triggers
+            menuClickHandler = (event) => {
+                // Check if click is outside the menu
+                if (currentMenu && !currentMenu.contains(event.target)) {
+                    log('Outside click detected, will prevent propagation and remove menu');
+                    event.preventDefault();
+                    event.stopPropagation();
+                    removeMenu();
+                } else {
+                    log('Click inside menu, allowing propagation');
+                }
+            };
+            
+            menuEscapeHandler = (event) => {
+                if (event.key === 'Escape') {
+                    log('Escape key detected, will remove menu');
+                    event.preventDefault();
+                    event.stopPropagation();
+                    removeMenu();
+                }
+            };
+            
+            document.addEventListener('click', menuClickHandler, { capture: true });
+            log('Did add outside click listener with event prevention');
+            
+            document.addEventListener('keydown', menuEscapeHandler, { capture: true });
+            log('Did add Escape key listener');
         }, 0);
         
         logFunctionEnd('createMenu');
@@ -895,6 +917,19 @@
      */
     function removeMenu() {
         logFunctionBegin('removeMenu');
+        
+        // Remove event listeners first
+        if (menuClickHandler) {
+            log('Removing click handler');
+            document.removeEventListener('click', menuClickHandler, true);
+            menuClickHandler = null;
+        }
+        
+        if (menuEscapeHandler) {
+            log('Removing escape handler');
+            document.removeEventListener('keydown', menuEscapeHandler, true);
+            menuEscapeHandler = null;
+        }
         
         if (currentMenu) {
             log('Menu exists, will remove it');
