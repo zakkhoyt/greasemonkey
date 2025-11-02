@@ -1362,6 +1362,45 @@
     }
 
     /**
+     * Checks if the event target is an input field or contenteditable element
+     * We should NOT intercept keyboard events in these contexts
+     * @param {KeyboardEvent} event - The keyboard event
+     * @returns {boolean} True if target is an input/textarea/contenteditable
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable
+     */
+    function isInEditableContext(event) {
+        logFunctionBegin('isInEditableContext');
+        
+        const target = event.target;
+        log(`Checking if target is editable: ${target?.tagName || 'null'}`);
+        
+        // Check if target is an input field
+        // HTMLInputElement covers <input> tags (text, search, password, email, etc.)
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement
+        const isInputField = target instanceof HTMLInputElement;
+        log(`Is input field: ${isInputField}`);
+        
+        // Check if target is a textarea
+        // HTMLTextAreaElement covers <textarea> tags
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement
+        const isTextArea = target instanceof HTMLTextAreaElement;
+        log(`Is textarea: ${isTextArea}`);
+        
+        // Check if target has contenteditable attribute
+        // contenteditable="true" allows editing of non-form elements
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable
+        const isContentEditable = target?.contentEditable === 'true' || target?.closest('[contenteditable="true"]');
+        log(`Is contenteditable: ${!!isContentEditable}`);
+        
+        const result = isInputField || isTextArea || !!isContentEditable;
+        log(`Should skip keyboard trigger: ${result}`);
+        
+        logFunctionEnd('isInEditableContext');
+        return result;
+    }
+
+    /**
      * Handles keyboard shortcuts: Alt+M or M alone
      * Checks element under mouse cursor to determine context
      * @param {KeyboardEvent} event - The keydown event
@@ -1381,6 +1420,14 @@
 
         if (isAltM || isMalone) {
             log('Trigger key combination detected');
+            
+            // Check if we're in an input context - skip M alone trigger if so
+            // Alt+M should still work in input fields, but M alone should not
+            if (isMalone && isInEditableContext(event)) {
+                log('M alone in editable context (input/textarea/contenteditable), skipping trigger');
+                logFunctionEnd('handleKeydown');
+                return;
+            }
             
             log('Will prevent default and stop propagation');
             event.preventDefault();

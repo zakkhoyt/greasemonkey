@@ -1,1 +1,1 @@
-/Users/zakkhoyt/code/repositories/z2k/github/greasemonkey/scripts/violentmonkey.zsh
+./scripts/violentmonkey/violentmonkey.zsh
