@@ -148,6 +148,84 @@
     log('begin script');
 
     // ============================================================================
+    // URL VALIDATION
+    // ============================================================================
+
+    /**
+     * Validates extracted URL and shows debug dialog if validation fails
+     * @param {string|null} url - The URL to validate
+     * @param {HTMLElement|null} anchor - The anchor element (for debugging context)
+     * @param {MouseEvent|KeyboardEvent} event - The triggering event (for debugging context)
+     * @param {string} source - Description of where this validation is being called from
+     * @returns {boolean} True if URL is valid, false otherwise
+     * 
+     * If validation fails and isDebug is true, prompts user with debugger option
+     * Logs comprehensive debugging information about the failure
+     * 
+     * Type returned: boolean
+     */
+    function validateUrl(url, anchor, event, source) {
+        logFunctionBegin('validateUrl');
+        log(`Validating URL from ${source}`);
+        log(`  URL value: ${url || 'null'}`);
+        log(`  URL type: ${typeof url}`);
+        log(`  URL length: ${url?.length || 0}`);
+        
+        // Check if URL is null, undefined, empty, or the string "null"
+        const isValid = url && url !== 'null' && url.trim() !== '';
+        
+        if (isValid) {
+            log(`URL validation passed: "${url}"`);
+            logFunctionEnd('validateUrl');
+            return true;
+        }
+        
+        // Validation failed - log comprehensive error details
+        logError(`URL validation FAILED at ${source}`);
+        logError(`  URL value: ${url}`);
+        logError(`  URL type: ${typeof url}`);
+        logError(`  event.target: ${event?.target?.tagName || 'null'}`);
+        logError(`  event.target.className: ${event?.target?.className || 'null'}`);
+        logError(`  event.type: ${event?.type || 'null'}`);
+        logError(`  anchor: ${anchor ? 'exists' : 'null'}`);
+        logError(`  anchor.tagName: ${anchor?.tagName || 'null'}`);
+        logError(`  anchor.href: ${anchor?.href || 'null'}`);
+        logError(`  anchor.getAttribute('href'): ${anchor?.getAttribute('href') || 'null'}`);
+        logError(`  anchor.textContent: ${anchor?.textContent?.substring(0, 50) || 'null'}`);
+        logError(`  window.location.href: ${window.location.href}`);
+        
+        // Show debug dialog if in debug mode
+        if (isDebug) {
+            const debugMessage = 
+                `URL Validation Failed!\n\n` +
+                `Source: ${source}\n` +
+                `URL: ${url || 'null'}\n` +
+                `Type: ${typeof url}\n\n` +
+                `Event Details:\n` +
+                `  Type: ${event?.type || 'null'}\n` +
+                `  Target: ${event?.target?.tagName || 'null'}\n` +
+                `  Class: ${event?.target?.className?.substring(0, 50) || 'null'}\n\n` +
+                `Anchor Details:\n` +
+                `  Exists: ${anchor ? 'yes' : 'no'}\n` +
+                `  Tag: ${anchor?.tagName || 'null'}\n` +
+                `  href property: ${anchor?.href || 'null'}\n` +
+                `  href attribute: ${anchor?.getAttribute('href') || 'null'}\n` +
+                `  Text: ${anchor?.textContent?.substring(0, 50) || 'null'}\n\n` +
+                `Open debugger to inspect?`;
+            
+            const openDebugger = confirm(debugMessage);
+            if (openDebugger) {
+                // Make debugging easier by exposing variables
+                console.log('Debug context:', { url, anchor, event, source });
+                debugger; // Breakpoint for debugging
+            }
+        }
+        
+        logFunctionEnd('validateUrl');
+        return false;
+    }
+
+    // ============================================================================
     // URL EXTRACTION
     // ============================================================================
 
@@ -419,7 +497,7 @@
      * Creates markdown-formatted link: [title](url)
      * Standard markdown link syntax used by GitHub, Reddit, Stack Overflow, etc.
      * @param {string} title - The link text/title
-     * @param {string} url - The URL to link to
+     * @param {string} url - The URL to link to (assumed to be already validated)
      * @returns {string} Markdown-formatted link
      * 
      * Template literal (backticks): Allows ${} interpolation for embedding expressions
@@ -427,34 +505,12 @@
      * Parameter types: Both strings
      * Return type: string
      * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
+     * 
+     * Note: URL should be validated with validateUrl() before calling this function
      */
     function createMarkdown(title, url) {
         logFunctionBegin('createMarkdown');
         log(`Will create markdown with title: "${title}", url: "${url}"`);
-        
-        // Validate inputs
-        if (!url || url === 'null') {
-            logError(`Cannot create markdown: URL is null or invalid`);
-            logError(`  title: "${title}"`);
-            logError(`  url: "${url}"`);
-            
-            if (isDebug) {
-                const debugMessage = 
-                    `Cannot create markdown link!\n\n` +
-                    `Title: ${title}\n` +
-                    `URL: ${url || 'null'}\n\n` +
-                    `The URL could not be extracted from the clicked element.\n\n` +
-                    `Open debugger to inspect?`;
-                
-                const openDebugger = confirm(debugMessage);
-                if (openDebugger) {
-                    debugger; // Breakpoint for debugging
-                }
-            }
-            
-            logFunctionEnd('createMarkdown');
-            return null;
-        }
         
         // Template literal creates string with embedded title and url values
         // Type: string
@@ -638,6 +694,11 @@
         logFunctionBegin('createMenu');
         log(`Will create menu at position (${x}, ${y}), isAnchor: ${isAnchor}`);
         
+        // Capture the current targetUrl value at menu creation time
+        // This prevents issues if the global targetUrl is cleared before menu item is clicked
+        const capturedUrl = targetUrl;
+        log(`Captured URL for menu: "${capturedUrl}"`);
+        
         // Remove any existing menu
         log('Will remove any existing menu');
         removeMenu();
@@ -764,13 +825,13 @@
                 log(`Did get title value: ${title ? `"${title}"` : 'null'}`);
                 
                 if (title) {
-                    log(`Will create markdown with title: "${title}", url: "${targetUrl}"`);
-                    const markdown = createMarkdown(title, targetUrl);
+                    log(`Will create markdown with title: "${title}", url: "${capturedUrl}"`);
+                    const markdown = createMarkdown(title, capturedUrl);
                     
                     if (markdown) {
                         log(`Did create markdown: "${markdown}"`);
                         log('Will copy to clipboard');
-                        copyToClipboard(markdown, title, targetUrl);
+                        copyToClipboard(markdown, title, capturedUrl);
                         log('Did copy to clipboard');
                     } else {
                         logError('Markdown creation failed (returned null)');
@@ -933,12 +994,13 @@
             targetUrl = extractUrlFromAnchor(anchor, event);
             targetElement = anchor;
             
-            if (targetUrl) {
-                log(`Successfully extracted URL: "${targetUrl}"`);
+            // Validate URL immediately after extraction
+            if (validateUrl(targetUrl, anchor, event, 'handleClick after extractUrlFromAnchor')) {
+                log(`Successfully extracted and validated URL: "${targetUrl}"`);
                 log('Will create menu for anchor');
                 createMenu(event.clientX, event.clientY, true, anchor);
             } else {
-                logError('URL extraction failed, using current page URL as fallback');
+                logError('URL validation failed, using current page URL as fallback');
                 targetUrl = window.location.href;
                 targetElement = null;
                 log(`Set targetUrl to current page: "${targetUrl}"`);
@@ -989,12 +1051,13 @@
             targetUrl = extractUrlFromAnchor(anchor, event);
             targetElement = anchor;
             
-            if (targetUrl) {
-                log(`Successfully extracted URL: "${targetUrl}"`);
+            // Validate URL immediately after extraction
+            if (validateUrl(targetUrl, anchor, event, 'handleContextMenu after extractUrlFromAnchor')) {
+                log(`Successfully extracted and validated URL: "${targetUrl}"`);
                 log('Will create menu for anchor');
                 createMenu(event.clientX, event.clientY, true, anchor);
             } else {
-                logError('URL extraction failed, using current page URL as fallback');
+                logError('URL validation failed, using current page URL as fallback');
                 targetUrl = window.location.href;
                 targetElement = null;
                 log(`Set targetUrl to current page: "${targetUrl}"`);
@@ -1054,12 +1117,13 @@
                 targetUrl = extractUrlFromAnchor(anchor, event);
                 targetElement = anchor;
                 
-                if (targetUrl) {
-                    log(`Successfully extracted URL: "${targetUrl}"`);
+                // Validate URL immediately after extraction
+                if (validateUrl(targetUrl, anchor, event, 'handleKeydown after extractUrlFromAnchor')) {
+                    log(`Successfully extracted and validated URL: "${targetUrl}"`);
                     log('Will create menu for anchor');
                     createMenu(mouseX, mouseY, true, anchor);
                 } else {
-                    logError('URL extraction failed, using current page URL as fallback');
+                    logError('URL validation failed, using current page URL as fallback');
                     targetUrl = window.location.href;
                     targetElement = null;
                     log(`Set targetUrl to current page: "${targetUrl}"`);
