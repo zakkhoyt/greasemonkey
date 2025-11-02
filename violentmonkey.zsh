@@ -1,1 +1,1 @@
-/Users/zakkhoyt/code/repositories/hatch/hatch_sleep/scripts/shell/violentmonkey.zsh
+/Users/zakkhoyt/code/repositories/z2k/github/greasemonkey/scripts/violentmonkey.zsh
