@@ -32,7 +32,7 @@
  * - Event capture phase: https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks/Events#event_bubbling_and_capture
  * 
  * VIOLENTMONKEY METADATA BLOCK:
- * @match *://*/*
+ * @match 
  *   - Matches all URLs on all domains (wildcard pattern)
  *   - Required by ViolentMonkey to determine which pages run this script
  *   - Reference: https://violentmonkey.github.io/api/matching/
@@ -61,28 +61,41 @@
  * Tested on Firefox 144.0.2 with ViolentMonkey 2.31.0 on macOS
  */
 
+
+ console.log(`markdown_linker: 01`);
+
 (function() {
     'use strict';
 
-    // Type: string
+    console.log(`markdown_linker: 11`);
+    
+    // ============================================================================
+    // CONFIGURATION
+    // ============================================================================
+    
+    // Enable debug mode to show error dialogs with debugger option
+    // Type: boolean
+    const isDebug = true;
+    
     // Script identifier prefix for all console.log statements
+    // Type: string
     let logBase = "markdown_linker";
     
-    // Type: HTMLDivElement | null
     // Reference to currently displayed popup menu DOM element
     // Tracked globally to enable removal when user clicks outside or selects option
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLDivElement
+    // Type: HTMLDivElement | null
+    // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLDivElement
     let currentMenu = null;
     
-    // Type: HTMLElement | null
     // The DOM element that triggered the menu (anchor element if on link, null if on page)
     // Stored for potential future use in context-aware operations
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement
+    // Type: HTMLElement | null
+    // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement
     let targetElement = null;
     
-    // Type: string | null
     // The URL to convert to markdown (either anchor's href or current page URL)
-    // https://developer.mozilla.org/en-US/docs/Web/API/URL
+    // Type: string | null
+    // Reference: https://developer.mozilla.org/en-US/docs/Web/API/URL
     let targetUrl = null;
 
     // ============================================================================
@@ -99,7 +112,25 @@
     }
 
     /**
-     * Log function entry point for tracing execution flow
+     * Logs a warning message with consistent prefix
+     * @param {string} message - The warning message to log
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Console/warn
+     */
+    function logWarn(message) {
+        console.warn(`${logBase}: ${message}`);
+    }
+
+    /**
+     * Logs an error message with consistent prefix
+     * @param {string} message - The error message to log
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Console/error
+     */
+    function logError(message) {
+        console.error(`${logBase}: ${message}`);
+    }
+
+    /**
+     * Logs a function's entry point for tracing execution flow
      * @param {string} functionName - Name of the function being entered
      */
     function logFunctionBegin(functionName) {
@@ -107,7 +138,7 @@
     }
 
     /**
-     * Log function exit point for tracing execution flow
+     * Logs a function's exit point for tracing execution flow
      * @param {string} functionName - Name of the function being exited
      */
     function logFunctionEnd(functionName) {
@@ -115,6 +146,135 @@
     }
 
     log('begin script');
+
+    // ============================================================================
+    // URL EXTRACTION
+    // ============================================================================
+
+    /**
+     * Extracts URL from an anchor element using multiple fallback strategies
+     * Handles relative URLs, missing hrefs, and site-specific patterns
+     * @param {HTMLElement} anchor - The anchor element (or closest anchor)
+     * @param {MouseEvent|KeyboardEvent} event - The triggering event (for additional context)
+     * @returns {string|null} Absolute URL or null if extraction fails
+     * 
+     * Strategies attempted in order:
+     * 1. Standard anchor.href (browser auto-resolves relative URLs)
+     * 2. Manual resolution with URL API
+     * 3. Walk up DOM tree to find parent anchor
+     * 4. Amazon-specific: Extract ASIN from data-asin attribute
+     * 5. Fallback to current page URL
+     * 
+     * Type returned: string (absolute URL) | null (extraction failed)
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement/href
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/URL
+     */
+    function extractUrlFromAnchor(anchor, event) {
+        logFunctionBegin('extractUrlFromAnchor');
+        
+        // Strategy 1: Try standard href property (browser auto-resolves)
+        if (anchor && anchor.href) {
+            log(`Strategy 1: Found href via anchor.href: "${anchor.href}"`);
+            logFunctionEnd('extractUrlFromAnchor');
+            return anchor.href;
+        }
+        
+        logWarn('Strategy 1 failed: anchor.href is null or empty');
+        log(`  anchor exists: ${!!anchor}`);
+        log(`  anchor.href: ${anchor?.href || 'null'}`);
+        log(`  anchor.tagName: ${anchor?.tagName || 'null'}`);
+        
+        // Strategy 2: Try manual URL resolution with getAttribute
+        if (anchor) {
+            const rawHref = anchor.getAttribute('href');
+            log(`Strategy 2: Attempting manual URL resolution with raw href: "${rawHref}"`);
+            
+            if (rawHref) {
+                try {
+                    const absoluteUrl = new URL(rawHref, window.location.origin);
+                    log(`Strategy 2: Successfully resolved to: "${absoluteUrl.href}"`);
+                    logFunctionEnd('extractUrlFromAnchor');
+                    return absoluteUrl.href;
+                } catch (error) {
+                    logError(`Strategy 2 failed: URL construction error: ${error.message}`);
+                }
+            } else {
+                logWarn('Strategy 2 failed: getAttribute("href") returned null');
+            }
+        }
+        
+        // Strategy 3: Walk up DOM tree to find parent anchor with valid href
+        log('Strategy 3: Walking up DOM tree to find valid anchor');
+        let currentElement = event.target;
+        let depth = 0;
+        const maxDepth = 10;
+        
+        while (currentElement && currentElement !== document.body && depth < maxDepth) {
+            log(`  Checking element at depth ${depth}: ${currentElement.tagName}`);
+            
+            if (currentElement.tagName === 'A' && currentElement.href) {
+                log(`Strategy 3: Found anchor with href at depth ${depth}: "${currentElement.href}"`);
+                logFunctionEnd('extractUrlFromAnchor');
+                return currentElement.href;
+            }
+            
+            currentElement = currentElement.parentElement;
+            depth++;
+        }
+        
+        logWarn(`Strategy 3 failed: No valid anchor found in ${depth} parent elements`);
+        
+        // Strategy 4: Amazon-specific - Extract ASIN from data-asin attribute
+        if (window.location.hostname.includes('amazon')) {
+            log('Strategy 4: Attempting Amazon ASIN extraction');
+            
+            const targetElement = event.target;
+            const asinContainer = targetElement.closest('[data-asin]');
+            
+            if (asinContainer) {
+                const asin = asinContainer.getAttribute('data-asin');
+                log(`  Found ASIN container with ASIN: "${asin}"`);
+                
+                if (asin) {
+                    const amazonUrl = `https://${window.location.hostname}/dp/${asin}`;
+                    log(`Strategy 4: Constructed Amazon URL: "${amazonUrl}"`);
+                    logFunctionEnd('extractUrlFromAnchor');
+                    return amazonUrl;
+                }
+            }
+            
+            logWarn('Strategy 4 failed: No data-asin attribute found');
+        } else {
+            log('Strategy 4 skipped: Not on Amazon domain');
+        }
+        
+        // All strategies failed
+        logError('All URL extraction strategies failed');
+        logError(`  event.target: ${event.target?.tagName || 'null'}`);
+        logError(`  event.target.className: ${event.target?.className || 'null'}`);
+        logError(`  anchor: ${anchor?.tagName || 'null'}`);
+        logError(`  anchor.href: ${anchor?.href || 'null'}`);
+        logError(`  anchor.getAttribute('href'): ${anchor?.getAttribute('href') || 'null'}`);
+        
+        // Show error dialog if in debug mode
+        if (isDebug) {
+            const debugMessage = 
+                `URL extraction failed!\n\n` +
+                `Target element: ${event.target?.tagName || 'null'}\n` +
+                `Anchor found: ${anchor ? 'yes' : 'no'}\n` +
+                `Anchor href: ${anchor?.href || 'null'}\n` +
+                `Raw href attribute: ${anchor?.getAttribute('href') || 'null'}\n\n` +
+                `Open debugger to inspect?`;
+            
+            const openDebugger = confirm(debugMessage);
+            if (openDebugger) {
+                debugger; // Breakpoint for debugging
+            }
+        }
+        
+        logFunctionEnd('extractUrlFromAnchor');
+        return null;
+    }
 
     // ============================================================================
     // TITLE EXTRACTION FUNCTIONS
@@ -125,25 +285,23 @@
      * Uses the Selection API to read user's text highlight
      * @returns {string|null} Selected text or null if nothing selected
      * 
-     * Type returned: string (when selection exists) | null (when no selection)
-     * 
      * JavaScript string type: Immutable sequence of UTF-16 code units
-     * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
-     * 
      * Selection API: Represents text selection on page
+     * Type returned: string (when selection exists) | null (when no selection)
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection
      */
     function getSelectedText() {
         logFunctionBegin('getSelectedText');
         log('Will get selection from window');
         
-        // Type: Selection object (browser API)
-        // https://developer.mozilla.org/en-US/docs/Web/API/Selection
         // getSelection() returns a Selection object representing user's text selection
+        // Type: Selection object (browser API)
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Selection
         const selection = window.getSelection().toString().trim();
         
-        // Type: string | null
         // Falsy check: empty string '' is falsy in JavaScript, so || null converts it
+        // Type: string | null
         const result = selection || null;
         
         log(`Did get selection: ${result ? `"${result}"` : 'null'}`);
@@ -155,9 +313,8 @@
      * Gets the current page's title from document
      * @returns {string|null} Page title or null if empty
      * 
-     * Type returned: string | null
-     * 
      * document.title: Always returns a string (empty string if no <title> tag)
+     * Type returned: string | null
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/title
      */
     function getPageTitle() {
@@ -177,23 +334,23 @@
      * Looks for <meta name="description" content="...">
      * @returns {string|null} Meta description or null if not found
      * 
-     * Type returned: string | null
-     * 
      * querySelector returns: HTMLMetaElement | null
-     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector
      * HTMLMetaElement.content: string property containing the content attribute value
+     * Type returned: string | null
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMetaElement
      */
     function getMetaDescription() {
         logFunctionBegin('getMetaDescription');
         log('Will query meta[name="description"]');
         
-        // Type: HTMLMetaElement | null
         // querySelector returns first matching element or null if none found
+        // Type: HTMLMetaElement | null
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector
         const meta = document.querySelector('meta[name="description"]');
         
-        // Type: string | null
         // meta.content is string if meta exists, ternary converts to null if meta is null
+        // Type: string | null
         const description = meta ? meta.content.trim() : null;
         
         log(`Did get meta description: ${description ? `"${description}"` : 'null'}`);
@@ -207,23 +364,20 @@
      * @param {HTMLAnchorElement} anchor - The <a> element to extract text from
      * @returns {string|null} Link text or null if empty
      * 
-     * Parameter type: HTMLAnchorElement (<a> tag)
-     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
-     * 
-     * Type returned: string | null
-     * 
      * textContent: Returns concatenated text of node and descendants (excluding script/style)
-     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
-     * 
      * title attribute: Provides advisory tooltip text
+     * Parameter type: HTMLAnchorElement (<a> tag)
+     * Type returned: string | null
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
      * Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/title
      */
     function getLinkText(anchor) {
         logFunctionBegin('getLinkText');
         log('Will get anchor textContent');
         
-        // Type: string (textContent always returns string, even if empty)
         // Chain of || operators finds first truthy value (non-empty string) or returns null
+        // Type: string (textContent always returns string, even if empty)
         const text = anchor.textContent.trim() || anchor.title || null;
         
         log(`Did get link text: ${text ? `"${text}"` : 'null'}`);
@@ -235,22 +389,21 @@
      * Prompts user to enter custom title via browser dialog
      * @returns {string|null} User-entered title or null if cancelled
      * 
-     * Type returned: string | null
-     * 
      * prompt() returns: string (user input) | null (user clicked Cancel)
-     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt
      * Note: prompt() is blocking (synchronous) - execution pauses until user responds
+     * Type returned: string | null
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt
      */
     function promptCustomTitle() {
         logFunctionBegin('promptCustomTitle');
         log('Will prompt user for custom title');
         
-        // Type: string | null
         // prompt() returns null if user clicks Cancel, string (possibly empty) if OK
+        // Type: string | null
         const title = prompt('Enter custom title for markdown link:');
         
-        // Type: string | null
         // Ternary operator ensures empty strings are converted to null
+        // Type: string | null
         const result = title ? title.trim() : null;
         
         log(`Did get custom title: ${result ? `"${result}"` : 'null (cancelled)'}`);
@@ -269,20 +422,42 @@
      * @param {string} url - The URL to link to
      * @returns {string} Markdown-formatted link
      * 
+     * Template literal (backticks): Allows ${} interpolation for embedding expressions
+     * Markdown link syntax reference: https://www.markdownguide.org/basic-syntax/#links
      * Parameter types: Both strings
      * Return type: string
-     * 
-     * Template literal (backticks): Allows ${} interpolation for embedding expressions
      * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
-     * 
-     * Markdown link syntax reference: https://www.markdownguide.org/basic-syntax/#links
      */
     function createMarkdown(title, url) {
         logFunctionBegin('createMarkdown');
         log(`Will create markdown with title: "${title}", url: "${url}"`);
         
-        // Type: string
+        // Validate inputs
+        if (!url || url === 'null') {
+            logError(`Cannot create markdown: URL is null or invalid`);
+            logError(`  title: "${title}"`);
+            logError(`  url: "${url}"`);
+            
+            if (isDebug) {
+                const debugMessage = 
+                    `Cannot create markdown link!\n\n` +
+                    `Title: ${title}\n` +
+                    `URL: ${url || 'null'}\n\n` +
+                    `The URL could not be extracted from the clicked element.\n\n` +
+                    `Open debugger to inspect?`;
+                
+                const openDebugger = confirm(debugMessage);
+                if (openDebugger) {
+                    debugger; // Breakpoint for debugging
+                }
+            }
+            
+            logFunctionEnd('createMarkdown');
+            return null;
+        }
+        
         // Template literal creates string with embedded title and url values
+        // Type: string
         const markdown = `[${title}](${url})`;
         
         log(`Did create markdown: "${markdown}"`);
@@ -296,31 +471,31 @@
      * @param {string} title - The title (for logging)
      * @param {string} url - The URL (for logging)
      * 
-     * Parameter types: All strings
-     * Return type: void (undefined)
-     * 
      * VIOLENTMONKEY API: GM_setClipboard
      * - Privileged API requiring @grant GM_setClipboard in metadata block
      * - Writes text to system clipboard (works across all platforms)
      * - Signature: GM_setClipboard(data: string, type?: string)
      * - Type parameter defaults to 'text/plain'
      * - Unlike navigator.clipboard.writeText(), works without user gesture requirement
-     * Reference: https://violentmonkey.github.io/api/gm/#gm_setclipboard
      * 
      * Why not use Clipboard API? Navigator.clipboard.writeText() requires:
      * 1. Secure context (HTTPS)
      * 2. Recent user interaction (within ~5 seconds)
      * 3. Clipboard permission granted
      * GM_setClipboard bypasses these restrictions via browser extension privileges
+     * 
+     * Parameter types: All strings
+     * Return type: void (undefined)
+     * Reference: https://violentmonkey.github.io/api/gm/#gm_setclipboard
      */
     function copyToClipboard(markdown, title, url) {
         logFunctionBegin('copyToClipboard');
         log(`Will copy to clipboard: "${markdown}"`);
         
         try {
-            // Type: void (returns undefined)
             // GM_setClipboard is a privileged ViolentMonkey API
             // Requires @grant GM_setClipboard in metadata block
+            // Type: void (returns undefined)
             GM_setClipboard(markdown, 'text/plain');
             log('Did copy to clipboard successfully');
             log(`  Title: ${title}`);
@@ -346,10 +521,9 @@
      * Creates a fixed-position overlay that auto-dismisses after 3 seconds
      * @param {string} message - The message to display
      * 
+     * Creates ephemeral DOM element that doesn't require cleanup tracking
      * Parameter type: string
      * Return type: void (undefined)
-     * 
-     * Creates ephemeral DOM element that doesn't require cleanup tracking
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/createElement
      */
     function showNotification(message) {
@@ -360,8 +534,8 @@
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLDivElement
         const notification = document.createElement('div');
         
-        // Type: string (textContent property always holds string value)
         // textContent is safe from XSS attacks (doesn't interpret HTML)
+        // Type: string (textContent property always holds string value)
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
         notification.textContent = message;
         
@@ -385,7 +559,8 @@
         `;
         
         log('Will append notification to body');
-        // Type: void (appendChild returns the appended node, but we don't use it)
+        // appendChild returns the appended node, but we don't use it
+        // Type: void
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild
         document.body.appendChild(notification);
         log('Did append notification to body');
@@ -397,7 +572,8 @@
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/setTimeout
         setTimeout(() => {
             log('Will remove notification');
-            // Type: void (remove() returns undefined)
+            // remove() returns undefined
+            // Type: void
             // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/remove
             notification.remove();
             log('Did remove notification');
@@ -415,8 +591,8 @@
     // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLStyleElement
     const style = document.createElement('style');
     
-    // Type: string
     // textContent for <style> elements is interpreted as CSS
+    // Type: string
     style.textContent = `
         @keyframes mdLinkerFadeIn {
             from { opacity: 0; transform: translateY(-10px); }
@@ -428,8 +604,8 @@
         }
     `;
     
-    // Type: void
     // appendChild adds style element to <head>, making animations available globally
+    // Type: void
     document.head.appendChild(style);
     log('Did add CSS keyframe animations');
 
@@ -445,21 +621,17 @@
      * @param {boolean} isAnchor - True if target is an anchor link, false for page
      * @param {HTMLAnchorElement|null} anchor - The anchor element (if isAnchor is true)
      * 
+     * JavaScript boolean: Primitive type with two values: true or false
+     * MouseEvent coordinates: clientX/clientY are relative to viewport
+     * getBoundingClientRect() used for position adjustment
      * Parameter types:
      * - x: number (pixel coordinate from MouseEvent.clientX)
      * - y: number (pixel coordinate from MouseEvent.clientY)
      * - isAnchor: boolean (JavaScript primitive boolean type)
      * - anchor: HTMLAnchorElement | null (DOM element or null)
-     * 
      * Return type: void (undefined)
-     * 
-     * JavaScript boolean: Primitive type with two values: true or false
      * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean
-     * 
-     * MouseEvent coordinates: clientX/clientY are relative to viewport
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/clientX
-     * 
-     * getBoundingClientRect() used for position adjustment
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
      */
     function createMenu(x, y, isAnchor, anchor = null) {
@@ -476,12 +648,12 @@
         // Type: HTMLDivElement
         const menu = document.createElement('div');
         
-        // Type: string (ID attribute value)
         // Setting ID allows CSS targeting and ensures only one menu exists
+        // Type: string (ID attribute value)
         menu.id = 'markdown-linker-menu';
         
-        // Type: string (cssText property holds entire inline style string)
         // Template literal with embedded ${x} and ${y} values for positioning
+        // Type: string (cssText property holds entire inline style string)
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style
         menu.style.cssText = `
             position: fixed;
@@ -502,8 +674,8 @@
 
         log('Will build menu options array');
         
-        // Type: Array<{label: string, getValue: () => string|null, isCancel?: boolean}>
         // Array of option objects, each with label text and getValue callback
+        // Type: Array<{label: string, getValue: () => string|null, isCancel?: boolean}>
         // Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array
         const options = [];
         
@@ -594,11 +766,15 @@
                 if (title) {
                     log(`Will create markdown with title: "${title}", url: "${targetUrl}"`);
                     const markdown = createMarkdown(title, targetUrl);
-                    log(`Did create markdown: "${markdown}"`);
                     
-                    log('Will copy to clipboard');
-                    copyToClipboard(markdown, title, targetUrl);
-                    log('Did copy to clipboard');
+                    if (markdown) {
+                        log(`Did create markdown: "${markdown}"`);
+                        log('Will copy to clipboard');
+                        copyToClipboard(markdown, title, targetUrl);
+                        log('Did copy to clipboard');
+                    } else {
+                        logError('Markdown creation failed (returned null)');
+                    }
                 }
                 
                 log('Will remove menu');
@@ -635,13 +811,12 @@
         }
         log('Did adjust menu position');
 
-        // Close menu when user clicks anywhere outside it
         // setTimeout with 0ms delay defers execution to next event loop
         // This prevents the current click event from immediately triggering the outside click handler
+        // { once: true } automatically removes listener after first trigger
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#options
         log('Will schedule outside click listener');
         setTimeout(() => {
-            // { once: true } automatically removes listener after first trigger
             document.addEventListener('click', removeMenu, { once: true });
             log('Did add outside click listener');
         }, 0);
@@ -730,12 +905,6 @@
      * @param {MouseEvent} event - The click event
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
      */
-    /**
-     * Handles left-click events with Alt modifier
-     * Intercepts clicks on anchors or page to show markdown menu
-     * @param {MouseEvent} event - The click event
-     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
-     */
     function handleClick(event) {
         logFunctionBegin('handleClick');
         log('Click event received');
@@ -759,13 +928,23 @@
         log('Will find closest anchor element');
         const anchor = event.target.closest('a');
         
-        if (anchor && anchor.href) {
-            log(`Clicked on anchor with href: "${anchor.href}"`);
-            targetUrl = anchor.href;
+        if (anchor) {
+            log('Found anchor element, will attempt URL extraction');
+            targetUrl = extractUrlFromAnchor(anchor, event);
             targetElement = anchor;
-            log(`Set targetUrl: "${targetUrl}"`);
-            log('Will create menu for anchor');
-            createMenu(event.clientX, event.clientY, true, anchor);
+            
+            if (targetUrl) {
+                log(`Successfully extracted URL: "${targetUrl}"`);
+                log('Will create menu for anchor');
+                createMenu(event.clientX, event.clientY, true, anchor);
+            } else {
+                logError('URL extraction failed, using current page URL as fallback');
+                targetUrl = window.location.href;
+                targetElement = null;
+                log(`Set targetUrl to current page: "${targetUrl}"`);
+                log('Will create menu for page (fallback)');
+                createMenu(event.clientX, event.clientY, false);
+            }
         } else {
             log('Clicked on page (not an anchor)');
             // window.location.href contains full URL of current page
@@ -805,13 +984,23 @@
         log('Will find closest anchor element');
         const anchor = event.target.closest('a');
         
-        if (anchor && anchor.href) {
-            log(`Right-clicked on anchor with href: "${anchor.href}"`);
-            targetUrl = anchor.href;
+        if (anchor) {
+            log('Found anchor element, will attempt URL extraction');
+            targetUrl = extractUrlFromAnchor(anchor, event);
             targetElement = anchor;
-            log(`Set targetUrl: "${targetUrl}"`);
-            log('Will create menu for anchor');
-            createMenu(event.clientX, event.clientY, true, anchor);
+            
+            if (targetUrl) {
+                log(`Successfully extracted URL: "${targetUrl}"`);
+                log('Will create menu for anchor');
+                createMenu(event.clientX, event.clientY, true, anchor);
+            } else {
+                logError('URL extraction failed, using current page URL as fallback');
+                targetUrl = window.location.href;
+                targetElement = null;
+                log(`Set targetUrl to current page: "${targetUrl}"`);
+                log('Will create menu for page (fallback)');
+                createMenu(event.clientX, event.clientY, false);
+            }
         } else {
             log('Right-clicked on page (not an anchor)');
             targetUrl = window.location.href;
@@ -860,13 +1049,23 @@
             const anchor = hoveredElement ? hoveredElement.closest('a') : null;
             log(`Found anchor: ${anchor ? 'yes' : 'no'}`);
 
-            if (anchor && anchor.href) {
-                log(`Keyboard triggered on anchor with href: "${anchor.href}"`);
-                targetUrl = anchor.href;
+            if (anchor) {
+                log('Found anchor element, will attempt URL extraction');
+                targetUrl = extractUrlFromAnchor(anchor, event);
                 targetElement = anchor;
-                log(`Set targetUrl: "${targetUrl}"`);
-                log('Will create menu for anchor');
-                createMenu(mouseX, mouseY, true, anchor);
+                
+                if (targetUrl) {
+                    log(`Successfully extracted URL: "${targetUrl}"`);
+                    log('Will create menu for anchor');
+                    createMenu(mouseX, mouseY, true, anchor);
+                } else {
+                    logError('URL extraction failed, using current page URL as fallback');
+                    targetUrl = window.location.href;
+                    targetElement = null;
+                    log(`Set targetUrl to current page: "${targetUrl}"`);
+                    log('Will create menu for page (fallback)');
+                    createMenu(mouseX, mouseY, false);
+                }
             } else {
                 log('Keyboard triggered on page (not hovering over anchor)');
                 targetUrl = window.location.href;
@@ -882,15 +1081,23 @@
         logFunctionEnd('handleKeydown');
     }
 
-    // Track mouse position for keyboard shortcuts
     // Needed because KeyboardEvent doesn't include mouse coordinates
+    // Updated continuously by mousemove event listener
+    // Used by handleKeydown to determine which element is under cursor
+    // Type: number (pixel coordinate, initially 0)
     // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
     let mouseX = 0;
     let mouseY = 0;
+    
     log('Will add mousemove listener to track mouse position');
+    
+    // Passive listener (no preventDefault/stopPropagation) for performance
+    // Arrow function updates closure variables on every mouse move
+    // Type: void (addEventListener returns undefined)
     document.addEventListener('mousemove', (event) => {
-        // Store current mouse position for use by keyboard handler
         // clientX/Y are relative to viewport, not document
+        // Type: number (MouseEvent.clientX and clientY are numbers)
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/clientX
         mouseX = event.clientX;
         mouseY = event.clientY;
     });

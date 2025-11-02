@@ -3,7 +3,23 @@
 This repository contains a series of scripts for Greasemonky, Violentmonkey, etc... Each nested in a subfolder. 
 
 
-You can edit/debug the source using Greasemonky's IDE, etc... This works but manually saving and reloading the web page stinks. 
+You can edit/debug the source using Greasemonky's IDE, etc... 
+
+See this zsh script to assist with editing in `VSCode`: [violentmonkey.zsh](violentmonkey.zsh)
+
+```zsh
+# violentmonkey.zsh --help
+
+violentmonkey.zsh \
+  --script $HOME/code/repositories/z2k/github/greasemonkey/markdown_linker/markdown_linker.user.js \
+  --preferred-ip "127.0.0.1" \
+  --debug 
+```
+
+
+
+
+
 
 
 # Violentmonkey
