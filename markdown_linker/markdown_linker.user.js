@@ -567,13 +567,20 @@
         logFunctionBegin('getLinkText');
         log('Will get anchor textContent');
         
+        // Get text and clean up whitespace aggressively
+        // Replace all newlines, tabs, and multiple spaces with single space
+        let text = anchor.textContent || anchor.title || '';
+        
+        // Replace all whitespace (including newlines, tabs) with single space
+        text = text.replace(/\s+/g, ' ').trim();
+        
         // Chain of || operators finds first truthy value (non-empty string) or returns null
         // Type: string (textContent always returns string, even if empty)
-        const text = anchor.textContent.trim() || anchor.title || null;
+        const result = text || null;
         
-        log(`Did get link text: ${text ? `"${text}"` : 'null'}`);
+        log(`Did get link text: ${result ? `"${result}"` : 'null'}`);
         logFunctionEnd('getLinkText');
-        return text;
+        return result;
     }
 
     /**
@@ -683,6 +690,98 @@
         }
         
         logFunctionEnd('copyToClipboard');
+    }
+
+    /**
+     * Extracts all links from the page and converts them to markdown format (flat list)
+     * @returns {string} All links as markdown, one per line
+     * 
+     * Type returned: string
+     */
+    function extractAllLinksFlat() {
+        logFunctionBegin('extractAllLinksFlat');
+        log('Will extract all anchor elements from page');
+        
+        const anchors = document.querySelectorAll('a[href]');
+        log(`Found ${anchors.length} anchor elements`);
+        
+        const markdownLinks = [];
+        
+        anchors.forEach((anchor, index) => {
+            const href = anchor.href;
+            if (!href || href === '#' || href.startsWith('javascript:')) {
+                log(`Skipping anchor ${index}: invalid href`);
+                return;
+            }
+            
+            // Clean the URL
+            const cleanedUrl = cleanUrl(href);
+            
+            // Get link text
+            const text = getLinkText(anchor) || cleanedUrl;
+            
+            // Create markdown link
+            const markdown = `[${text}](${cleanedUrl})`;
+            markdownLinks.push(markdown);
+            log(`Added link ${index}: ${markdown}`);
+        });
+        
+        const result = markdownLinks.join('\n');
+        log(`Generated ${markdownLinks.length} markdown links`);
+        logFunctionEnd('extractAllLinksFlat');
+        return result;
+    }
+
+    /**
+     * Extracts all links from the page and converts them to markdown format (hierarchical)
+     * Preserves HTML structure with indentation
+     * @returns {string} All links as markdown with indentation
+     * 
+     * Type returned: string
+     */
+    function extractAllLinksHierarchical() {
+        logFunctionBegin('extractAllLinksHierarchical');
+        log('Will extract all anchor elements from page with hierarchy');
+        
+        const anchors = document.querySelectorAll('a[href]');
+        log(`Found ${anchors.length} anchor elements`);
+        
+        const markdownLinks = [];
+        
+        anchors.forEach((anchor, index) => {
+            const href = anchor.href;
+            if (!href || href === '#' || href.startsWith('javascript:')) {
+                log(`Skipping anchor ${index}: invalid href`);
+                return;
+            }
+            
+            // Calculate depth by counting parent elements
+            let depth = 0;
+            let element = anchor.parentElement;
+            while (element && element !== document.body) {
+                depth++;
+                element = element.parentElement;
+            }
+            
+            // Create indentation (2 spaces per level)
+            const indent = '  '.repeat(Math.min(depth, 10)); // Cap at 10 levels
+            
+            // Clean the URL
+            const cleanedUrl = cleanUrl(href);
+            
+            // Get link text
+            const text = getLinkText(anchor) || cleanedUrl;
+            
+            // Create markdown link with indentation
+            const markdown = `${indent}- [${text}](${cleanedUrl})`;
+            markdownLinks.push(markdown);
+            log(`Added link ${index} at depth ${depth}: ${markdown}`);
+        });
+        
+        const result = markdownLinks.join('\n');
+        log(`Generated ${markdownLinks.length} hierarchical markdown links`);
+        logFunctionEnd('extractAllLinksHierarchical');
+        return result;
     }
 
     /**
@@ -898,6 +997,20 @@
         log('Adding custom title option');
         options.push({ label: 'Custom Title...', getValue: promptCustomTitle });
         
+        // Add separator and "All Links" options at the bottom
+        log('Adding extract all links options');
+        options.push({ 
+            label: 'All Links (Flat)', 
+            getValue: extractAllLinksFlat,
+            isAllLinks: true,
+            isSeparator: true  // Add visual separator above this item
+        });
+        options.push({ 
+            label: 'All Links (Hierarchical)', 
+            getValue: extractAllLinksHierarchical,
+            isAllLinks: true 
+        });
+        
         log(`Did build ${options.length} menu options`);
 
         // Create menu items
@@ -912,6 +1025,7 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                ${option.isSeparator ? 'border-top: 1px solid #ccc; margin-top: 4px; padding-top: 8px;' : ''}
             `;
 
             item.addEventListener('mouseenter', () => {
@@ -925,21 +1039,43 @@
             item.addEventListener('click', () => {
                 log(`Menu item clicked: "${option.label}"`);
 
-                log('Will get title value from option');
-                const title = option.getValue();
-                log(`Did get title value: ${title ? `"${title}"` : 'null'}`);
-                
-                if (title) {
-                    log(`Will create markdown with title: "${title}", url: "${capturedUrl}"`);
-                    const markdown = createMarkdown(title, capturedUrl);
+                // Check if this is an "All Links" option
+                if (option.isAllLinks) {
+                    log('All Links option selected, will extract all links');
+                    const allLinksMarkdown = option.getValue();
                     
-                    if (markdown) {
-                        log(`Did create markdown: "${markdown}"`);
+                    if (allLinksMarkdown) {
+                        log(`Generated all links markdown (${allLinksMarkdown.length} characters)`);
                         log('Will copy to clipboard');
-                        copyToClipboard(markdown, title, capturedUrl);
-                        log('Did copy to clipboard');
+                        try {
+                            GM_setClipboard(allLinksMarkdown, 'text/plain');
+                            log('Did copy all links to clipboard');
+                            showNotification('All page links copied to clipboard!');
+                        } catch (error) {
+                            logError(`Failed to copy all links: ${error}`);
+                            alert('Failed to copy to clipboard. Check console for details.');
+                        }
                     } else {
-                        logError('Markdown creation failed (returned null)');
+                        logError('Failed to generate all links markdown');
+                    }
+                } else {
+                    // Regular single link option
+                    log('Will get title value from option');
+                    const title = option.getValue();
+                    log(`Did get title value: ${title ? `"${title}"` : 'null'}`);
+                    
+                    if (title) {
+                        log(`Will create markdown with title: "${title}", url: "${capturedUrl}"`);
+                        const markdown = createMarkdown(title, capturedUrl);
+                        
+                        if (markdown) {
+                            log(`Did create markdown: "${markdown}"`);
+                            log('Will copy to clipboard');
+                            copyToClipboard(markdown, title, capturedUrl);
+                            log('Did copy to clipboard');
+                        } else {
+                            logError('Markdown creation failed (returned null)');
+                        }
                     }
                 }
                 
