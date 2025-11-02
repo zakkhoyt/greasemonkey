@@ -231,6 +231,114 @@
     }
 
     // ============================================================================
+    // URL CLEANING
+    // ============================================================================
+
+    /**
+     * Cleans URL by removing tracking parameters and shortening site-specific URLs
+     * @param {string} url - The URL to clean
+     * @returns {string} Cleaned URL
+     * 
+     * Common tracking parameters removed:
+     * - utm_* (Google Analytics)
+     * - fbclid (Facebook)
+     * - gclid (Google Ads)
+     * - ref, ref_* (Various referral tracking)
+     * - mc_* (Marketing campaign)
+     * - _ga (Google Analytics)
+     * 
+     * Site-specific cleaning:
+     * - Amazon: Extracts clean /dp/{ASIN} URLs
+     * 
+     * Type returned: string
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/URL
+     */
+    function cleanUrl(url) {
+        logFunctionBegin('cleanUrl');
+        log(`Original URL: "${url}"`);
+        
+        try {
+            const urlObj = new URL(url);
+            
+            // Amazon-specific cleaning
+            if (urlObj.hostname.includes('amazon.')) {
+                log('Detected Amazon URL, will extract clean product URL');
+                
+                // Try to extract ASIN from path (format: /dp/{ASIN} or /gp/product/{ASIN})
+                const dpMatch = urlObj.pathname.match(/\/dp\/([A-Z0-9]{10})/);
+                const gpMatch = urlObj.pathname.match(/\/gp\/product\/([A-Z0-9]{10})/);
+                
+                if (dpMatch) {
+                    const asin = dpMatch[1];
+                    const cleanAmazonUrl = `${urlObj.protocol}//${urlObj.hostname}/dp/${asin}`;
+                    log(`Extracted clean Amazon URL: "${cleanAmazonUrl}"`);
+                    logFunctionEnd('cleanUrl');
+                    return cleanAmazonUrl;
+                } else if (gpMatch) {
+                    const asin = gpMatch[1];
+                    const cleanAmazonUrl = `${urlObj.protocol}//${urlObj.hostname}/dp/${asin}`;
+                    log(`Extracted clean Amazon URL from /gp/product: "${cleanAmazonUrl}"`);
+                    logFunctionEnd('cleanUrl');
+                    return cleanAmazonUrl;
+                }
+                
+                log('Could not extract ASIN, will fall through to general cleaning');
+            }
+            
+            // General tracking parameter removal
+            log('Removing common tracking parameters');
+            const trackingParams = [
+                // Google Analytics
+                'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+                // Facebook
+                'fbclid',
+                // Google Ads
+                'gclid', 'gclsrc',
+                // Amazon tracking
+                'ref', 'ref_', 'pf_rd_r', 'pf_rd_p', 'pf_rd_m', 'pf_rd_s', 'pf_rd_t', 'pf_rd_i',
+                'pd_rd_r', 'pd_rd_w', 'pd_rd_wg',
+                'qid', 'sr', 'keywords', 'crid', 'sprefix', 'th', 'psc',
+                'dib', 'dib_tag',
+                // Marketing campaign
+                'mc_cid', 'mc_eid',
+                // General analytics
+                '_ga', '_gl',
+                // Other common tracking
+                'msclkid', 'twclid'
+            ];
+            
+            // Remove tracking parameters
+            trackingParams.forEach(param => {
+                urlObj.searchParams.delete(param);
+            });
+            
+            // Also remove any param that starts with tracked prefixes
+            const paramsToDelete = [];
+            for (const [key] of urlObj.searchParams) {
+                if (key.startsWith('utm_') || 
+                    key.startsWith('ref') || 
+                    key.startsWith('pf_') || 
+                    key.startsWith('pd_') ||
+                    key.startsWith('mc_')) {
+                    paramsToDelete.push(key);
+                }
+            }
+            paramsToDelete.forEach(param => urlObj.searchParams.delete(param));
+            
+            const cleanedUrl = urlObj.toString();
+            log(`Cleaned URL: "${cleanedUrl}"`);
+            logFunctionEnd('cleanUrl');
+            return cleanedUrl;
+            
+        } catch (error) {
+            logError(`Error cleaning URL: ${error.message}`);
+            log('Returning original URL');
+            logFunctionEnd('cleanUrl');
+            return url;
+        }
+    }
+
+    // ============================================================================
     // URL EXTRACTION
     // ============================================================================
 
@@ -1032,6 +1140,9 @@
             // Validate URL immediately after extraction
             if (validateUrl(targetUrl, anchor, event, 'handleClick after extractUrlFromAnchor')) {
                 log(`Successfully extracted and validated URL: "${targetUrl}"`);
+                // Clean URL to remove tracking parameters
+                targetUrl = cleanUrl(targetUrl);
+                log(`Cleaned URL: "${targetUrl}"`);
                 log('Will create menu for anchor');
                 createMenu(event.clientX, event.clientY, true, anchor);
             } else {
@@ -1089,6 +1200,9 @@
             // Validate URL immediately after extraction
             if (validateUrl(targetUrl, anchor, event, 'handleContextMenu after extractUrlFromAnchor')) {
                 log(`Successfully extracted and validated URL: "${targetUrl}"`);
+                // Clean URL to remove tracking parameters
+                targetUrl = cleanUrl(targetUrl);
+                log(`Cleaned URL: "${targetUrl}"`);
                 log('Will create menu for anchor');
                 createMenu(event.clientX, event.clientY, true, anchor);
             } else {
@@ -1155,6 +1269,9 @@
                 // Validate URL immediately after extraction
                 if (validateUrl(targetUrl, anchor, event, 'handleKeydown after extractUrlFromAnchor')) {
                     log(`Successfully extracted and validated URL: "${targetUrl}"`);
+                    // Clean URL to remove tracking parameters
+                    targetUrl = cleanUrl(targetUrl);
+                    log(`Cleaned URL: "${targetUrl}"`);
                     log('Will create menu for anchor');
                     createMenu(mouseX, mouseY, true, anchor);
                 } else {
