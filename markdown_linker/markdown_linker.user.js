@@ -1633,18 +1633,14 @@
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
      */
     function handleKeydown(event) {
-        logFunctionBegin('handleKeydown');
-        log(`Key pressed: "${event.key}"`);
-        
         // Check if M key pressed (case-insensitive)
         // Alt+M or M alone (without Ctrl/Shift/Meta)
         const isM = event.key === 'm' || event.key === 'M';
         const isAltM = isM && event.altKey;
         const isMalone = isM && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey;
 
-        log(`Is M key: ${isM}, Is Alt+M: ${isAltM}, Is M alone: ${isMalone}`);
-
         if (isAltM || isMalone) {
+            logFunctionBegin('handleKeydown');
             log('Trigger key combination detected');
             
             // Check if we're in an input context - skip M alone trigger if so
@@ -1699,11 +1695,8 @@
                 log('Will create menu for page');
                 createMenu(mouseX, mouseY, false);
             }
-        } else {
-            log('Key combination does not trigger script, ignoring');
+            logFunctionEnd('handleKeydown');
         }
-        
-        logFunctionEnd('handleKeydown');
     }
 
     // Needed because KeyboardEvent doesn't include mouse coordinates
