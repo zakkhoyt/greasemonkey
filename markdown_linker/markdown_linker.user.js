@@ -75,7 +75,7 @@
     
     // Enable debug mode to show error dialogs with debugger option
     // Type: boolean
-    const isDebug = true;
+    const isDebug = false;
     
     // Script identifier prefix for all console.log statements
     // Type: string
@@ -113,7 +113,9 @@
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Console/log
      */
     function log(message) {
-        console.log(`${logBase}: ${message}`);
+        if (isDebug) {
+            console.log(`${logBase}: ${message}`);
+        }
     }
 
     /**
@@ -139,7 +141,9 @@
      * @param {string} functionName - Name of the function being entered
      */
     function logFunctionBegin(functionName) {
-        console.log(`${logBase}: begin ${functionName}`);
+        if (isDebug) {
+            console.log(`${logBase}: begin ${functionName}`);
+        }
     }
 
     /**
@@ -147,7 +151,20 @@
      * @param {string} functionName - Name of the function being exited
      */
     function logFunctionEnd(functionName) {
-        console.log(`${logBase}: end ${functionName}`);
+        if (isDebug) {
+            console.log(`${logBase}: end ${functionName}`);
+        }
+    }
+
+    /**
+     * Safely unwraps a property value, returning 'null' string if undefined
+     * Avoids optional chaining operator which can confuse syntax highlighters
+     * @param {*} obj - The object to access
+     * @param {string} prop - The property name to access
+     * @returns {*} The property value or the string 'null'
+     */
+    function unwrap(obj, prop) {
+        return obj && obj[prop] ? obj[prop] : 'null';
     }
 
     log('begin script');
@@ -174,7 +191,7 @@
         log(`Validating URL from ${source}`);
         log(`  URL value: ${url || 'null'}`);
         log(`  URL type: ${typeof url}`);
-        log(`  URL length: ${url?.length || 0}`);
+        log(`  URL length: ${url ? url.length : 0}`);
         
         // Check if URL is null, undefined, empty, or the string "null"
         const isValid = url && url !== 'null' && url.trim() !== '';
@@ -189,33 +206,33 @@
         logError(`URL validation FAILED at ${source}`);
         logError(`  URL value: ${url}`);
         logError(`  URL type: ${typeof url}`);
-        logError(`  event.target: ${event?.target?.tagName || 'null'}`);
-        logError(`  event.target.className: ${event?.target?.className || 'null'}`);
-        logError(`  event.type: ${event?.type || 'null'}`);
+        logError(`  event.target: ${unwrap(event.target, 'tagName')}`);
+        logError(`  event.target.className: ${unwrap(event.target, 'className')}`);
+        logError(`  event.type: ${unwrap(event, 'type')}`);
         logError(`  anchor: ${anchor ? 'exists' : 'null'}`);
-        logError(`  anchor.tagName: ${anchor?.tagName || 'null'}`);
-        logError(`  anchor.href: ${anchor?.href || 'null'}`);
-        logError(`  anchor.getAttribute('href'): ${anchor?.getAttribute('href') || 'null'}`);
-        logError(`  anchor.textContent: ${anchor?.textContent?.substring(0, 50) || 'null'}`);
+        logError(`  anchor.tagName: ${unwrap(anchor, 'tagName')}`);
+        logError(`  anchor.href: ${unwrap(anchor, 'href')}`);
+        logError(`  anchor.getAttribute('href'): ${anchor ? anchor.getAttribute('href') : 'null'}`);
+        logError(`  anchor.textContent: ${anchor && anchor.textContent ? anchor.textContent.substring(0, 50) : 'null'}`);
         logError(`  window.location.href: ${window.location.href}`);
         
         // Show debug dialog if in debug mode
-        if (isDebug) {
+        // if (isDebug) {
             const debugMessage = 
                 `URL Validation Failed!\n\n` +
                 `Source: ${source}\n` +
                 `URL: ${url || 'null'}\n` +
                 `Type: ${typeof url}\n\n` +
                 `Event Details:\n` +
-                `  Type: ${event?.type || 'null'}\n` +
-                `  Target: ${event?.target?.tagName || 'null'}\n` +
-                `  Class: ${event?.target?.className?.substring(0, 50) || 'null'}\n\n` +
+                `  Type: ${unwrap(event, 'type')}\n` +
+                `  Target: ${unwrap(event.target, 'tagName')}\n` +
+                `  Class: ${anchor && anchor.textContent ? anchor.textContent.substring(0, 50) : 'null'}\n\n` +
                 `Anchor Details:\n` +
                 `  Exists: ${anchor ? 'yes' : 'no'}\n` +
-                `  Tag: ${anchor?.tagName || 'null'}\n` +
-                `  href property: ${anchor?.href || 'null'}\n` +
-                `  href attribute: ${anchor?.getAttribute('href') || 'null'}\n` +
-                `  Text: ${anchor?.textContent?.substring(0, 50) || 'null'}\n\n` +
+                `  Tag: ${unwrap(anchor, 'tagName')}\n` +
+                `  href property: ${unwrap(anchor, 'href')}\n` +
+                `  href attribute: ${anchor ? anchor.getAttribute('href') : 'null'}\n` +
+                `  Text: ${anchor && anchor.textContent ? anchor.textContent.substring(0, 50) : 'null'}\n\n` +
                 `Open debugger to inspect?`;
             
             const openDebugger = confirm(debugMessage);
@@ -224,7 +241,7 @@
                 console.log('Debug context:', { url, anchor, event, source });
                 debugger; // Breakpoint for debugging
             }
-        }
+        // }
         
         logFunctionEnd('validateUrl');
         return false;
@@ -372,8 +389,8 @@
         
         logWarn('Strategy 1 failed: anchor.href is null or empty');
         log(`  anchor exists: ${!!anchor}`);
-        log(`  anchor.href: ${anchor?.href || 'null'}`);
-        log(`  anchor.tagName: ${anchor?.tagName || 'null'}`);
+        log(`  anchor.href: ${unwrap(anchor, 'href')}`);
+        log(`  anchor.tagName: ${unwrap(anchor, 'tagName')}`);
         
         // Strategy 2: Try manual URL resolution with getAttribute
         if (anchor) {
@@ -441,20 +458,20 @@
         
         // All strategies failed
         logError('All URL extraction strategies failed');
-        logError(`  event.target: ${event.target?.tagName || 'null'}`);
-        logError(`  event.target.className: ${event.target?.className || 'null'}`);
-        logError(`  anchor: ${anchor?.tagName || 'null'}`);
-        logError(`  anchor.href: ${anchor?.href || 'null'}`);
-        logError(`  anchor.getAttribute('href'): ${anchor?.getAttribute('href') || 'null'}`);
+        logError(`  event.target: ${unwrap(event.target, 'tagName')}`);
+        logError(`  event.target.className: ${unwrap(event.target, 'className')}`);
+        logError(`  anchor: ${unwrap(anchor, 'tagName')}`);
+        logError(`  anchor.href: ${unwrap(anchor, 'href')}`);
+        logError(`  anchor.getAttribute('href'): ${anchor ? anchor.getAttribute('href') : 'null'}`);
         
         // Show error dialog if in debug mode
         if (isDebug) {
             const debugMessage = 
                 `URL extraction failed!\n\n` +
-                `Target element: ${event.target?.tagName || 'null'}\n` +
+                `Target element: ${unwrap(event.target, 'tagName')}\n` +
                 `Anchor found: ${anchor ? 'yes' : 'no'}\n` +
-                `Anchor href: ${anchor?.href || 'null'}\n` +
-                `Raw href attribute: ${anchor?.getAttribute('href') || 'null'}\n\n` +
+                `Anchor href: ${unwrap(anchor, 'href')}\n` +
+                `Raw href attribute: ${anchor ? anchor.getAttribute('href') : 'null'}\n\n` +
                 `Open debugger to inspect?`;
             
             const openDebugger = confirm(debugMessage);
@@ -607,6 +624,196 @@
         log(`Did get custom title: ${result ? `"${result}"` : 'null (cancelled)'}`);
         logFunctionEnd('promptCustomTitle');
         return result;
+    }
+
+    // ============================================================================
+    // AUTO-INFER HELPER FUNCTIONS (Alt+Z+Click feature)
+    // ============================================================================
+
+    /**
+     * Automatically infers the best title for a markdown link
+     * Priority order: selected text > anchor link text > page title
+     * Used by Alt+Z+Click quick-copy feature (no menu shown)
+     * @param {HTMLElement|null} anchor - The anchor element if clicking on a link, null otherwise
+     * @returns {string|null} The inferred title or null if no title source available
+     * 
+     * This function encapsulates the title selection logic used in auto-infer mode
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection
+     */
+    function getAutoInferredTitle(anchor) {
+        logFunctionBegin('getAutoInferredTitle');
+        log('Will attempt to auto-infer title in priority order: selected > anchor > page');
+        
+        // Priority 1: Selected text on page
+        log('Will check for selected text (Priority 1)');
+        const selectedText = getSelectedText();
+        if (selectedText) {
+            log(`Did find selected text: "${selectedText}"`);
+            logFunctionEnd('getAutoInferredTitle');
+            return selectedText;
+        }
+        log('No selected text available');
+        
+        // Priority 2: Anchor link text (if clicking on an anchor)
+        if (anchor) {
+            log('Will check for anchor link text (Priority 2)');
+            const linkText = getLinkText(anchor);
+            if (linkText) {
+                log(`Did find anchor link text: "${linkText}"`);
+                logFunctionEnd('getAutoInferredTitle');
+                return linkText;
+            }
+            log('No anchor link text available');
+        } else {
+            log('Not on an anchor, skipping Priority 2');
+        }
+        
+        // Priority 3: Page title (fallback)
+        log('Will check for page title (Priority 3 - fallback)');
+        const pageTitle = getPageTitle();
+        if (pageTitle) {
+            log(`Did find page title: "${pageTitle}"`);
+            logFunctionEnd('getAutoInferredTitle');
+            return pageTitle;
+        }
+        log('No page title available - cannot auto-infer title');
+        
+        logFunctionEnd('getAutoInferredTitle');
+        return null;
+    }
+
+    /**
+     * Auto-infers title, creates markdown link, copies to clipboard, and shows notification
+     * Used by Alt+Z+Click feature to quickly copy markdown without menu
+     * @param {string} url - The URL to create markdown link for
+     * @param {HTMLElement|null} anchor - The anchor element if on a link, null otherwise
+     * 
+     * Flow: infer title -> create markdown -> copy to clipboard -> show notification
+     * Reference: https://violentmonkey.github.io/api/gm/#gm_setclipboard
+     */
+    function autoInferAndCopyMarkdown(url, anchor) {
+        logFunctionBegin('autoInferAndCopyMarkdown');
+        log(`Will auto-infer and copy markdown for URL: "${url}"`);
+        
+        // Get the auto-inferred title using priority logic
+        log('Will get auto-inferred title');
+        const title = getAutoInferredTitle(anchor);
+        
+        if (!title) {
+            log('Auto-infer failed - no title source available');
+            logError('Could not auto-infer title from selected text, anchor text, or page title');
+            showNotification('Could not infer title - no text selected and no anchor found');
+            logFunctionEnd('autoInferAndCopyMarkdown');
+            return;
+        }
+        
+        log(`Did get title: "${title}"`);
+        
+        // Create markdown link
+        log('Will create markdown');
+        const markdown = createMarkdown(title, url);
+        log(`Did create markdown: "${markdown}"`);
+        
+        // Copy to clipboard
+        log('Will copy to clipboard');
+        try {
+            GM_setClipboard(markdown, 'text/plain');
+            log('Did copy to clipboard');
+            
+            // Show success notification with preview of what was copied
+            const preview = markdown.length > 60 ? markdown.substring(0, 57) + '...' : markdown;
+            showNotification(`Copied: ${preview}`);
+            log(`Did show notification with preview: "${preview}"`);
+        } catch (error) {
+            logError(`Failed to copy to clipboard: ${error}`);
+            showNotification('Failed to copy to clipboard - check console for errors');
+        }
+        
+        logFunctionEnd('autoInferAndCopyMarkdown');
+    }
+
+    /**
+     * Compiles buffered links into a markdown list and copies to clipboard
+     * Called when Alt+Z keys are released after buffering multiple clicks
+     * @param {Array<{url: string, anchor: HTMLElement|null}>} buffer - Array of buffered link data
+     * 
+     * Creates a flat markdown list:
+     * * [Title 1](url1)
+     * * [Title 2](url2)
+     * * [Title 3](url3)
+     * 
+     * Each title is auto-inferred using getAutoInferredTitle() priority logic
+     */
+    function compileAndCopyBufferedLinks(buffer) {
+        logFunctionBegin('compileAndCopyBufferedLinks');
+        log(`Will compile ${buffer.length} buffered links into markdown list`);
+        
+        if (buffer.length === 0) {
+            log('Buffer is empty, nothing to compile');
+            logFunctionEnd('compileAndCopyBufferedLinks');
+            return;
+        }
+        
+        // Helper to format a single item with title inference
+        const formatBufferItem = (item, asList = true) => {
+            const title = getAutoInferredTitle(item.anchor);
+            if (!title) {
+                try {
+                    const url = new URL(item.url);
+                    const fallbackTitle = url.hostname || 'Link';
+                    return asList ? `* [${fallbackTitle}](${item.url})` : `[${fallbackTitle}](${item.url})`;
+                } catch (e) {
+                    return asList ? `* [Link](${item.url})` : `[Link](${item.url})`;
+                }
+            }
+            return asList ? `* [${title}](${item.url})` : `[${title}](${item.url})`;
+        };
+        
+        // Special case: single link - no list formatting
+        if (buffer.length === 1) {
+            log('Buffer contains single link, skipping list formatting');
+            const fullMarkdown = formatBufferItem(buffer[0], false);
+            log(`Did compile single link markdown (${fullMarkdown.length} characters):`);
+            log(fullMarkdown);
+            
+            try {
+                GM_setClipboard(fullMarkdown, 'text/plain');
+                log('Did copy to clipboard');
+                showNotification(`Copied link to clipboard`);
+                log(`Did show notification for 1 link`);
+            } catch (error) {
+                logError(`Failed to copy to clipboard: ${error}`);
+                showNotification(`Failed to copy link - check console for errors`);
+            }
+        } else {
+            // Build markdown list for multiple links
+            log('Will infer titles and build markdown list');
+            const markdownLines = buffer.map((item, index) => {
+                log(`Processing buffered link ${index + 1}/${buffer.length}: ${item.url}`);
+                return formatBufferItem(item, true);
+            });
+            
+            // Join all lines with newlines
+            const fullMarkdown = markdownLines.join('\n');
+            log(`Did compile full markdown list (${fullMarkdown.length} characters):`);
+            log(fullMarkdown);
+            
+            // Copy to clipboard
+            log('Will copy markdown list to clipboard');
+            try {
+                GM_setClipboard(fullMarkdown, 'text/plain');
+                log('Did copy to clipboard');
+                
+                // Show notification with count
+                showNotification(`Copied ${buffer.length} links to clipboard`);
+                log(`Did show notification for ${buffer.length} links`);
+            } catch (error) {
+                logError(`Failed to copy to clipboard: ${error}`);
+                showNotification(`Failed to copy ${buffer.length} links - check console for errors`);
+            }
+        }
+        
+        logFunctionEnd('compileAndCopyBufferedLinks');
     }
 
     // ============================================================================
@@ -1249,6 +1456,11 @@
         logFunctionBegin('handleClick');
         log('Click event received');
         
+        // Debug: Log Alt+Z status
+        const isAltPressed = event.altKey;
+        const isZPressed = isZKeyDown;
+        console.log(`[MARKDOWN_LINKER_DEBUG] Click: altKey=${isAltPressed}, z down=${isZPressed}, buffer active=${isAltZBufferActive}, buffer size=${altZClickBuffer.length}`);
+        
         if (!shouldTrigger(event)) {
             log('Should not trigger (Alt key not pressed), returning');
             logFunctionEnd('handleClick');
@@ -1262,7 +1474,18 @@
         event.stopPropagation();
         log('Did prevent default and stop propagation');
 
-        // closest() traverses up DOM tree to find nearest ancestor matching selector
+        // Check if Alt+Z are both pressed (auto-infer mode)
+        // Use event.altKey directly for Alt
+        // Use isZKeyDown for Z (simple boolean flag)
+        log('Will check if Alt+Z keys are pressed (auto-infer mode)');
+        const isAutoInferMode = event.altKey && isZKeyDown;
+        log(`Is auto-infer mode (Alt+Z+Click): ${isAutoInferMode}`);
+        
+        // If we just entered auto-infer mode, mark that the buffer is now active
+        if (isAutoInferMode && !isAltZBufferActive) {
+            isAltZBufferActive = true;
+            log('Activated Alt+Z buffer mode');
+        }
         // Returns null if no match found
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/closest
         log('Will find closest anchor element');
@@ -1279,15 +1502,29 @@
                 // Clean URL to remove tracking parameters
                 targetUrl = cleanUrl(targetUrl);
                 log(`Cleaned URL: "${targetUrl}"`);
-                log('Will create menu for anchor');
-                createMenu(event.clientX, event.clientY, true, anchor);
+                
+                if (isAutoInferMode) {
+                    log('In auto-infer mode, will buffer this link');
+                    altZClickBuffer.push({ url: targetUrl, anchor: anchor });
+                    log(`Buffered link #${altZClickBuffer.length}: "${targetUrl}"`);
+                } else {
+                    log('In normal mode, will create menu for anchor');
+                    createMenu(event.clientX, event.clientY, true, anchor);
+                }
             } else {
                 logError('URL validation failed, using current page URL as fallback');
                 targetUrl = window.location.href;
                 targetElement = null;
                 log(`Set targetUrl to current page: "${targetUrl}"`);
-                log('Will create menu for page (fallback)');
-                createMenu(event.clientX, event.clientY, false);
+                
+                if (isAutoInferMode) {
+                    log('In auto-infer mode, will buffer this link (page URL fallback)');
+                    altZClickBuffer.push({ url: targetUrl, anchor: null });
+                    log(`Buffered link #${altZClickBuffer.length}: "${targetUrl}"`);
+                } else {
+                    log('In normal mode, will create menu for page (fallback)');
+                    createMenu(event.clientX, event.clientY, false);
+                }
             }
         } else {
             log('Clicked on page (not an anchor)');
@@ -1296,8 +1533,15 @@
             targetUrl = window.location.href;
             targetElement = null;
             log(`Set targetUrl to current page: "${targetUrl}"`);
-            log('Will create menu for page');
-            createMenu(event.clientX, event.clientY, false);
+            
+            if (isAutoInferMode) {
+                log('In auto-infer mode, will buffer this link (page URL)');
+                altZClickBuffer.push({ url: targetUrl, anchor: null });
+                log(`Buffered link #${altZClickBuffer.length}: "${targetUrl}"`);
+            } else {
+                log('In normal mode, will create menu for page');
+                createMenu(event.clientX, event.clientY, false);
+            }
         }
         
         logFunctionEnd('handleClick');
@@ -1373,7 +1617,7 @@
         logFunctionBegin('isInEditableContext');
         
         const target = event.target;
-        log(`Checking if target is editable: ${target?.tagName || 'null'}`);
+        log(`Checking if target is editable: ${unwrap(target, 'tagName')}`);
         
         // Check if target is an input field
         // HTMLInputElement covers <input> tags (text, search, password, email, etc.)
@@ -1390,7 +1634,7 @@
         // Check if target has contenteditable attribute
         // contenteditable="true" allows editing of non-form elements
         // Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable
-        const isContentEditable = target?.contentEditable === 'true' || target?.closest('[contenteditable="true"]');
+        const isContentEditable = target && target.contentEditable === 'true' || target ? target.closest('[contenteditable="true"]') : null;
         log(`Is contenteditable: ${!!isContentEditable}`);
         
         const result = isInputField || isTextArea || !!isContentEditable;
@@ -1407,18 +1651,14 @@
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
      */
     function handleKeydown(event) {
-        logFunctionBegin('handleKeydown');
-        log(`Key pressed: "${event.key}"`);
-        
         // Check if M key pressed (case-insensitive)
         // Alt+M or M alone (without Ctrl/Shift/Meta)
         const isM = event.key === 'm' || event.key === 'M';
         const isAltM = isM && event.altKey;
         const isMalone = isM && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey;
 
-        log(`Is M key: ${isM}, Is Alt+M: ${isAltM}, Is M alone: ${isMalone}`);
-
         if (isAltM || isMalone) {
+            logFunctionBegin('handleKeydown');
             log('Trigger key combination detected');
             
             // Check if we're in an input context - skip M alone trigger if so
@@ -1473,11 +1713,8 @@
                 log('Will create menu for page');
                 createMenu(mouseX, mouseY, false);
             }
-        } else {
-            log('Key combination does not trigger script, ignoring');
+            logFunctionEnd('handleKeydown');
         }
-        
-        logFunctionEnd('handleKeydown');
     }
 
     // Needed because KeyboardEvent doesn't include mouse coordinates
@@ -1502,6 +1739,85 @@
     });
     log('Did add mousemove listener');
 
+    // Set to track currently pressed keys
+    // Used to detect Alt+Z+Click combinations for auto-infer mode
+    // Type: Set<string> (stores key names like 'Alt', 'z', 'Z')
+    // Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
+    const pressedKeys = new Set();
+    
+    // Buffer to collect multiple links while Alt+Z are held
+    // Each entry: {url: string, anchor: HTMLElement|null}
+    // Type: Array<{url: string, anchor: HTMLElement|null}>
+    let altZClickBuffer = [];
+    
+    // Flag to track if Alt+Z buffer mode is currently active
+    // Prevents reinitializing buffer on key repeat events
+    // Type: boolean
+    let isAltZBufferActive = false;
+    
+    // Keyboard shortcuts: Alt+M or M alone - register FIRST so key tracker captures SECOND (fires second during capture)
+    log('Will add keydown listener to track pressed keys (using capture phase, registered FIRST so fires FIRST)');
+    // Simple state tracking: just remember if z is currently down
+    let isZKeyDown = false;
+    
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'z' || event.key === 'Z') {
+            isZKeyDown = true;
+        }
+    }, true);
+    
+    document.addEventListener('keyup', (event) => {
+        if (event.key === 'z' || event.key === 'Z') {
+            isZKeyDown = false;
+        }
+    }, true);
+    log('Did add keydown listener for key tracking');
+    
+    log('Registering keydown listener for Alt+M handler (registered SECOND so fires SECOND during capture)');
+    document.addEventListener('keydown', handleKeydown, true);
+    log('Did register keydown listener for Alt+M handler');
+    
+    log('Will add keyup listener to track key releases');
+    document.addEventListener('keyup', (event) => {
+        logFunctionBegin('keyup tracker');
+        log(`Key released: ${event.key}, altKey=${event.altKey}`);
+        
+        // Debug: Log current state
+        console.log(`[MARKDOWN_LINKER_DEBUG] KeyUp: released=${event.key}, altKey=${event.altKey}, buffer active=${isAltZBufferActive}, buffer size=${altZClickBuffer.length}`);
+        
+        // Check if Alt+Z combo WAS active before this key release
+        // At keyup time: event.altKey is already false for the Alt key, so we check what's being released
+        const isAltReleasing = event.key === 'Alt';
+        const isZReleasing = event.key === 'z' || event.key === 'Z';
+        const wasAltZActive = isAltZBufferActive;  // We use the flag we set during clicks
+        
+        log(`Alt releasing: ${isAltReleasing}, Z releasing: ${isZReleasing}, Was Alt+Z active: ${wasAltZActive}`);
+        
+        // If Alt+Z combo was active and we're releasing Alt or Z, process buffer
+        if (wasAltZActive && (isAltReleasing || isZReleasing)) {
+            log(`Alt+Z was deactivated, processing buffer with ${altZClickBuffer.length} buffered links`);
+            
+            // Deactivate buffer mode
+            isAltZBufferActive = false;
+            
+            if (altZClickBuffer.length > 0) {
+                log('Will compile buffered links into markdown list');
+                compileAndCopyBufferedLinks(altZClickBuffer);
+                // Clear buffer after processing
+                const count = altZClickBuffer.length;
+                altZClickBuffer = [];
+                log(`Did process ${count} links and clear buffer`);
+            } else {
+                log('Buffer is empty, nothing to copy');
+            }
+        } else {
+            log('Alt+Z was not active or combo still active, skipping buffer processing');
+        }
+        
+        logFunctionEnd('keyup tracker');
+    }, false);  // Use bubble phase (false) so it fires AFTER capture phase handlers
+    log('Did add keyup listener for key tracking');
+
     // ============================================================================
     // REGISTER EVENT LISTENERS
     // ============================================================================
@@ -1521,13 +1837,8 @@
     document.addEventListener('contextmenu', handleContextMenu, true);
     log('Did register contextmenu listener');
 
-    // Keyboard shortcuts: Alt+M or M alone
-    log('Registering keydown listener');
-    document.addEventListener('keydown', handleKeydown, true);
-    log('Did register keydown listener');
-
     log('All event listeners registered');
-    log('Triggers: Alt+Click, Alt+Right-Click, Alt+M, or M');
+    log('Triggers: Alt+Click (show menu), Alt+Z+Click (auto-infer), Alt+Right-Click, or Alt+M');
     log('Script initialization complete');
 
 })();
