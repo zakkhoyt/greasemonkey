@@ -2,7 +2,7 @@
 // @name         Markdown Linker
 // @namespace    https://github.com/zakkhoyt/greasemonkey/markdown_linker
 // @version      1.0.0
-// @description  Convert URLs to markdown links with Alt+Click, Alt+Right-Click, or Alt+M
+// @description  Convert URLs to markdown links with Alt+Click, Alt+Right-Click, Alt+M, or M key
 // @author       Zakk Hoyt
 // @match        *://*/*
 // @grant        GM_setClipboard
@@ -150,6 +150,17 @@
         console.log(`${logBase}: end ${functionName}`);
     }
 
+    /**
+     * Safely unwraps a property value, returning 'null' string if undefined
+     * Avoids optional chaining operator which can confuse syntax highlighters
+     * @param {*} obj - The object to access
+     * @param {string} prop - The property name to access
+     * @returns {*} The property value or the string 'null'
+     */
+    function unwrap(obj, prop) {
+        return obj && obj[prop] ? obj[prop] : 'null';
+    }
+
     log('begin script');
 
     // ============================================================================
@@ -174,7 +185,7 @@
         log(`Validating URL from ${source}`);
         log(`  URL value: ${url || 'null'}`);
         log(`  URL type: ${typeof url}`);
-        log(`  URL length: ${url?.length || 0}`);
+        log(`  URL length: ${url ? url.length : 0}`);
         
         // Check if URL is null, undefined, empty, or the string "null"
         const isValid = url && url !== 'null' && url.trim() !== '';
@@ -189,14 +200,14 @@
         logError(`URL validation FAILED at ${source}`);
         logError(`  URL value: ${url}`);
         logError(`  URL type: ${typeof url}`);
-        logError(`  event.target: ${event?.target?.tagName || 'null'}`);
-        logError(`  event.target.className: ${event?.target?.className || 'null'}`);
-        logError(`  event.type: ${event?.type || 'null'}`);
+        logError(`  event.target: ${unwrap(event.target, 'tagName')}`);
+        logError(`  event.target.className: ${unwrap(event.target, 'className')}`);
+        logError(`  event.type: ${unwrap(event, 'type')}`);
         logError(`  anchor: ${anchor ? 'exists' : 'null'}`);
-        logError(`  anchor.tagName: ${anchor?.tagName || 'null'}`);
-        logError(`  anchor.href: ${anchor?.href || 'null'}`);
-        logError(`  anchor.getAttribute('href'): ${anchor?.getAttribute('href') || 'null'}`);
-        logError(`  anchor.textContent: ${anchor?.textContent?.substring(0, 50) || 'null'}`);
+        logError(`  anchor.tagName: ${unwrap(anchor, 'tagName')}`);
+        logError(`  anchor.href: ${unwrap(anchor, 'href')}`);
+        logError(`  anchor.getAttribute('href'): ${anchor ? anchor.getAttribute('href') : 'null'}`);
+        logError(`  anchor.textContent: ${anchor && anchor.textContent ? anchor.textContent.substring(0, 50) : 'null'}`);
         logError(`  window.location.href: ${window.location.href}`);
         
         // Show debug dialog if in debug mode
@@ -207,15 +218,15 @@
                 `URL: ${url || 'null'}\n` +
                 `Type: ${typeof url}\n\n` +
                 `Event Details:\n` +
-                `  Type: ${event?.type || 'null'}\n` +
-                `  Target: ${event?.target?.tagName || 'null'}\n` +
-                `  Class: ${event?.target?.className?.substring(0, 50) || 'null'}\n\n` +
+                `  Type: ${unwrap(event, 'type')}\n` +
+                `  Target: ${unwrap(event.target, 'tagName')}\n` +
+                `  Class: ${anchor && anchor.textContent ? anchor.textContent.substring(0, 50) : 'null'}\n\n` +
                 `Anchor Details:\n` +
                 `  Exists: ${anchor ? 'yes' : 'no'}\n` +
-                `  Tag: ${anchor?.tagName || 'null'}\n` +
-                `  href property: ${anchor?.href || 'null'}\n` +
-                `  href attribute: ${anchor?.getAttribute('href') || 'null'}\n` +
-                `  Text: ${anchor?.textContent?.substring(0, 50) || 'null'}\n\n` +
+                `  Tag: ${unwrap(anchor, 'tagName')}\n` +
+                `  href property: ${unwrap(anchor, 'href')}\n` +
+                `  href attribute: ${anchor ? anchor.getAttribute('href') : 'null'}\n` +
+                `  Text: ${anchor && anchor.textContent ? anchor.textContent.substring(0, 50) : 'null'}\n\n` +
                 `Open debugger to inspect?`;
             
             const openDebugger = confirm(debugMessage);
@@ -372,8 +383,8 @@
         
         logWarn('Strategy 1 failed: anchor.href is null or empty');
         log(`  anchor exists: ${!!anchor}`);
-        log(`  anchor.href: ${anchor?.href || 'null'}`);
-        log(`  anchor.tagName: ${anchor?.tagName || 'null'}`);
+        log(`  anchor.href: ${unwrap(anchor, 'href')}`);
+        log(`  anchor.tagName: ${unwrap(anchor, 'tagName')}`);
         
         // Strategy 2: Try manual URL resolution with getAttribute
         if (anchor) {
@@ -441,20 +452,20 @@
         
         // All strategies failed
         logError('All URL extraction strategies failed');
-        logError(`  event.target: ${event.target?.tagName || 'null'}`);
-        logError(`  event.target.className: ${event.target?.className || 'null'}`);
-        logError(`  anchor: ${anchor?.tagName || 'null'}`);
-        logError(`  anchor.href: ${anchor?.href || 'null'}`);
-        logError(`  anchor.getAttribute('href'): ${anchor?.getAttribute('href') || 'null'}`);
+        logError(`  event.target: ${unwrap(event.target, 'tagName')}`);
+        logError(`  event.target.className: ${unwrap(event.target, 'className')}`);
+        logError(`  anchor: ${unwrap(anchor, 'tagName')}`);
+        logError(`  anchor.href: ${unwrap(anchor, 'href')}`);
+        logError(`  anchor.getAttribute('href'): ${anchor ? anchor.getAttribute('href') : 'null'}`);
         
         // Show error dialog if in debug mode
         if (isDebug) {
             const debugMessage = 
                 `URL extraction failed!\n\n` +
-                `Target element: ${event.target?.tagName || 'null'}\n` +
+                `Target element: ${unwrap(event.target, 'tagName')}\n` +
                 `Anchor found: ${anchor ? 'yes' : 'no'}\n` +
-                `Anchor href: ${anchor?.href || 'null'}\n` +
-                `Raw href attribute: ${anchor?.getAttribute('href') || 'null'}\n\n` +
+                `Anchor href: ${unwrap(anchor, 'href')}\n` +
+                `Raw href attribute: ${anchor ? anchor.getAttribute('href') : 'null'}\n\n` +
                 `Open debugger to inspect?`;
             
             const openDebugger = confirm(debugMessage);
@@ -1362,7 +1373,46 @@
     }
 
     /**
-     * Handles keyboard shortcuts: Alt+M
+     * Checks if the event target is an input field or contenteditable element
+     * We should NOT intercept keyboard events in these contexts
+     * @param {KeyboardEvent} event - The keyboard event
+     * @returns {boolean} True if target is an input/textarea/contenteditable
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable
+     */
+    function isInEditableContext(event) {
+        logFunctionBegin('isInEditableContext');
+        
+        const target = event.target;
+        log(`Checking if target is editable: ${unwrap(target, 'tagName')}`);
+        
+        // Check if target is an input field
+        // HTMLInputElement covers <input> tags (text, search, password, email, etc.)
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement
+        const isInputField = target instanceof HTMLInputElement;
+        log(`Is input field: ${isInputField}`);
+        
+        // Check if target is a textarea
+        // HTMLTextAreaElement covers <textarea> tags
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement
+        const isTextArea = target instanceof HTMLTextAreaElement;
+        log(`Is textarea: ${isTextArea}`);
+        
+        // Check if target has contenteditable attribute
+        // contenteditable="true" allows editing of non-form elements
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable
+        const isContentEditable = target && target.contentEditable === 'true' || target ? target.closest('[contenteditable="true"]') : null;
+        log(`Is contenteditable: ${!!isContentEditable}`);
+        
+        const result = isInputField || isTextArea || !!isContentEditable;
+        log(`Should skip keyboard trigger: ${result}`);
+        
+        logFunctionEnd('isInEditableContext');
+        return result;
+    }
+
+    /**
+     * Handles keyboard shortcuts: Alt+M or M alone
      * Checks element under mouse cursor to determine context
      * @param {KeyboardEvent} event - The keydown event
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
@@ -1371,14 +1421,24 @@
         logFunctionBegin('handleKeydown');
         log(`Key pressed: "${event.key}"`);
         
-        // Check if Alt+M is pressed
+        // Check if M key pressed (case-insensitive)
+        // Alt+M or M alone (without Ctrl/Shift/Meta)
         const isM = event.key === 'm' || event.key === 'M';
         const isAltM = isM && event.altKey;
+        const isMalone = isM && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey;
 
-        log(`Is M key: ${isM}, Is Alt+M: ${isAltM}`);
+        log(`Is M key: ${isM}, Is Alt+M: ${isAltM}, Is M alone: ${isMalone}`);
 
-        if (isAltM) {
-            log('Alt+M trigger detected');
+        if (isAltM || isMalone) {
+            log('Trigger key combination detected');
+            
+            // Check if we're in an input context - skip M alone trigger if so
+            // Alt+M should still work in input fields, but M alone should not
+            if (isMalone && isInEditableContext(event)) {
+                log('M alone in editable context (input/textarea/contenteditable), skipping trigger');
+                logFunctionEnd('handleKeydown');
+                return;
+            }
             
             log('Will prevent default and stop propagation');
             event.preventDefault();
@@ -1478,7 +1538,7 @@
     log('Did register keydown listener');
 
     log('All event listeners registered');
-    log('Triggers: Alt+Click, Alt+Right-Click, or Alt+M');
+    log('Triggers: Alt+Click, Alt+Right-Click, Alt+M, or M');
     log('Script initialization complete');
 
 })();
