@@ -754,51 +754,63 @@
             return;
         }
         
-        // Build markdown list
-        log('Will infer titles and build markdown list');
-        const markdownLines = buffer.map((item, index) => {
-            log(`Processing buffered link ${index + 1}/${buffer.length}: ${item.url}`);
-            
-            // Auto-infer title for this link
+        // Helper to format a single item with title inference
+        const formatBufferItem = (item, asList = true) => {
             const title = getAutoInferredTitle(item.anchor);
             if (!title) {
-                log(`  Could not infer title, using URL domain as fallback`);
-                // Extract domain/hostname as fallback if title couldn't be inferred
                 try {
                     const url = new URL(item.url);
                     const fallbackTitle = url.hostname || 'Link';
-                    const markdown = `* [${fallbackTitle}](${item.url})`;
-                    log(`  Created markdown: ${markdown}`);
-                    return markdown;
+                    return asList ? `* [${fallbackTitle}](${item.url})` : `[${fallbackTitle}](${item.url})`;
                 } catch (e) {
-                    log(`  Failed to parse URL, using generic title`);
-                    return `* [Link](${item.url})`;
+                    return asList ? `* [Link](${item.url})` : `[Link](${item.url})`;
                 }
             }
-            
-            const markdown = `* [${title}](${item.url})`;
-            log(`  Inferred title: "${title}"`);
-            log(`  Created markdown: ${markdown}`);
-            return markdown;
-        });
+            return asList ? `* [${title}](${item.url})` : `[${title}](${item.url})`;
+        };
         
-        // Join all lines with newlines
-        const fullMarkdown = markdownLines.join('\n');
-        log(`Did compile full markdown list (${fullMarkdown.length} characters):`);
-        log(fullMarkdown);
-        
-        // Copy to clipboard
-        log('Will copy markdown list to clipboard');
-        try {
-            GM_setClipboard(fullMarkdown, 'text/plain');
-            log('Did copy to clipboard');
+        // Special case: single link - no list formatting
+        if (buffer.length === 1) {
+            log('Buffer contains single link, skipping list formatting');
+            const fullMarkdown = formatBufferItem(buffer[0], false);
+            log(`Did compile single link markdown (${fullMarkdown.length} characters):`);
+            log(fullMarkdown);
             
-            // Show notification with count
-            showNotification(`Copied ${buffer.length} links to clipboard`);
-            log(`Did show notification for ${buffer.length} links`);
-        } catch (error) {
-            logError(`Failed to copy to clipboard: ${error}`);
-            showNotification(`Failed to copy ${buffer.length} links - check console for errors`);
+            try {
+                GM_setClipboard(fullMarkdown, 'text/plain');
+                log('Did copy to clipboard');
+                showNotification(`Copied link to clipboard`);
+                log(`Did show notification for 1 link`);
+            } catch (error) {
+                logError(`Failed to copy to clipboard: ${error}`);
+                showNotification(`Failed to copy link - check console for errors`);
+            }
+        } else {
+            // Build markdown list for multiple links
+            log('Will infer titles and build markdown list');
+            const markdownLines = buffer.map((item, index) => {
+                log(`Processing buffered link ${index + 1}/${buffer.length}: ${item.url}`);
+                return formatBufferItem(item, true);
+            });
+            
+            // Join all lines with newlines
+            const fullMarkdown = markdownLines.join('\n');
+            log(`Did compile full markdown list (${fullMarkdown.length} characters):`);
+            log(fullMarkdown);
+            
+            // Copy to clipboard
+            log('Will copy markdown list to clipboard');
+            try {
+                GM_setClipboard(fullMarkdown, 'text/plain');
+                log('Did copy to clipboard');
+                
+                // Show notification with count
+                showNotification(`Copied ${buffer.length} links to clipboard`);
+                log(`Did show notification for ${buffer.length} links`);
+            } catch (error) {
+                logError(`Failed to copy to clipboard: ${error}`);
+                showNotification(`Failed to copy ${buffer.length} links - check console for errors`);
+            }
         }
         
         logFunctionEnd('compileAndCopyBufferedLinks');
