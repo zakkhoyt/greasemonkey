@@ -2,7 +2,7 @@
 // @name         Markdown Linker
 // @namespace    https://github.com/zakkhoyt/greasemonkey/markdown_linker
 // @version      1.0.0
-// @description  Convert URLs to markdown links with Alt+Click, Alt+Right-Click, Alt+M, or M key
+// @description  Convert URLs to markdown links with Alt+Click, Alt+Right-Click, or Alt+M
 // @author       Zakk Hoyt
 // @match        *://*/*
 // @grant        GM_setClipboard
@@ -1362,46 +1362,7 @@
     }
 
     /**
-     * Checks if the event target is an input field or contenteditable element
-     * We should NOT intercept keyboard events in these contexts
-     * @param {KeyboardEvent} event - The keyboard event
-     * @returns {boolean} True if target is an input/textarea/contenteditable
-     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement
-     * Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable
-     */
-    function isInEditableContext(event) {
-        logFunctionBegin('isInEditableContext');
-        
-        const target = event.target;
-        log(`Checking if target is editable: ${target?.tagName || 'null'}`);
-        
-        // Check if target is an input field
-        // HTMLInputElement covers <input> tags (text, search, password, email, etc.)
-        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement
-        const isInputField = target instanceof HTMLInputElement;
-        log(`Is input field: ${isInputField}`);
-        
-        // Check if target is a textarea
-        // HTMLTextAreaElement covers <textarea> tags
-        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement
-        const isTextArea = target instanceof HTMLTextAreaElement;
-        log(`Is textarea: ${isTextArea}`);
-        
-        // Check if target has contenteditable attribute
-        // contenteditable="true" allows editing of non-form elements
-        // Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable
-        const isContentEditable = target?.contentEditable === 'true' || target?.closest('[contenteditable="true"]');
-        log(`Is contenteditable: ${!!isContentEditable}`);
-        
-        const result = isInputField || isTextArea || !!isContentEditable;
-        log(`Should skip keyboard trigger: ${result}`);
-        
-        logFunctionEnd('isInEditableContext');
-        return result;
-    }
-
-    /**
-     * Handles keyboard shortcuts: Alt+M or M alone
+     * Handles keyboard shortcuts: Alt+M
      * Checks element under mouse cursor to determine context
      * @param {KeyboardEvent} event - The keydown event
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
@@ -1410,24 +1371,14 @@
         logFunctionBegin('handleKeydown');
         log(`Key pressed: "${event.key}"`);
         
-        // Check if M key pressed (case-insensitive)
-        // Alt+M or M alone (without Ctrl/Shift/Meta)
+        // Check if Alt+M is pressed
         const isM = event.key === 'm' || event.key === 'M';
         const isAltM = isM && event.altKey;
-        const isMalone = isM && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey;
 
-        log(`Is M key: ${isM}, Is Alt+M: ${isAltM}, Is M alone: ${isMalone}`);
+        log(`Is M key: ${isM}, Is Alt+M: ${isAltM}`);
 
-        if (isAltM || isMalone) {
-            log('Trigger key combination detected');
-            
-            // Check if we're in an input context - skip M alone trigger if so
-            // Alt+M should still work in input fields, but M alone should not
-            if (isMalone && isInEditableContext(event)) {
-                log('M alone in editable context (input/textarea/contenteditable), skipping trigger');
-                logFunctionEnd('handleKeydown');
-                return;
-            }
+        if (isAltM) {
+            log('Alt+M trigger detected');
             
             log('Will prevent default and stop propagation');
             event.preventDefault();
@@ -1527,7 +1478,7 @@
     log('Did register keydown listener');
 
     log('All event listeners registered');
-    log('Triggers: Alt+Click, Alt+Right-Click, Alt+M, or M');
+    log('Triggers: Alt+Click, Alt+Right-Click, or Alt+M');
     log('Script initialization complete');
 
 })();
