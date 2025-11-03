@@ -9,6 +9,8 @@ See this zsh script to assist with editing in `VSCode`: [violentmonkey.zsh](viol
 
 ```zsh
 # violentmonkey.zsh --help
+# violentmonkey.zsh --script <path_to_user.js>
+# violentmonkey.zsh --script <path_to_user.js> [--preferred-ip <a.b.c.d>] [--debug]
 
 violentmonkey.zsh \
   --script $HOME/code/repositories/z2k/github/greasemonkey/markdown_linker/markdown_linker.user.js \
@@ -16,11 +18,7 @@ violentmonkey.zsh \
   --debug 
 ```
 
-
-
-
-
-
+![alt text](images/Firefox_20251102161205.png)
 
 # Violentmonkey
 ![edit_violent_monkey](images/edit_violent_monkey.png)

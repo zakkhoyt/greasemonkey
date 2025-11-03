@@ -1,0 +1,12 @@
+{
+  "folders": [
+    {
+      "name": "user_scripts",
+      "path": "."
+    },
+    {
+      "path": ".ai"
+    }
+  ],
+  "settings": {}
+}
