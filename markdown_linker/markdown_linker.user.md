@@ -136,11 +136,30 @@ Action Items
 * [X] ~~*all on page (indented)*~~ [2025-11-01]
 * [X] ~~*all on page (outdented)*~~ [2025-11-01]
 
+econdary Goals
+
+* [ ] if our isDebug flag == true, when writing each console log also write it to some local file, on disk, where you have access to read it. 
+    * Be sure to use proper timestamping for each log line. 
+    * We could even write a new log file each session (timestamped of course)
+    * Maybe `/tmp/userscripts/markdown_linker/logs/markdown_linker_${timestamp}.log`
+* [ ] let's make `opt+z+click` (either on a anchor or off of a anchor) to automatically infer the title in this order:
+    * selected text
+    * anchor title
+* [ ] success banner should preview the output (1 line truncated)
+* [ ] let's add a preference (using violentmonkey API) to let the user define their own "key shortcuts"
+    * use the current as default values
+* [ ] let's add a preference (using violentmonkey API) for popup menu scaling. 
+    * allow a value from 0.5 ... 3.0
+    * The default value should be 1.0. and 1.0 should equal the current css & size setttings 
+    * the preference value should be some factor to apply to those css values
+    * If we can use a slider that would probably be ideal, but we can work with other UI controls as well
+
+    * hotkey modifier
+
+
 * [ ] dedicated hotkey to infer title source (no menu prompt)
     * selected text -> anchor title
-* [ ] prefs menu
-    * hotkey modifier
-    * menu scale (0.5 - 3.0). 1.0 = current size setttings. 
+
 * [ ] image links (click only)
 * [ ] hotkey glyphs in menu
 * [ ] normalize list indenting
