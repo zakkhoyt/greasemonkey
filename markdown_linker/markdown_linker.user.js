@@ -75,7 +75,7 @@
     
     // Enable debug mode to show error dialogs with debugger option
     // Type: boolean
-    const isDebug = true;
+    const isDebug = false;
     
     // Script identifier prefix for all console.log statements
     // Type: string
@@ -113,7 +113,9 @@
      * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Console/log
      */
     function log(message) {
-        console.log(`${logBase}: ${message}`);
+        if (isDebug) {
+            console.log(`${logBase}: ${message}`);
+        }
     }
 
     /**
@@ -139,7 +141,9 @@
      * @param {string} functionName - Name of the function being entered
      */
     function logFunctionBegin(functionName) {
-        console.log(`${logBase}: begin ${functionName}`);
+        if (isDebug) {
+            console.log(`${logBase}: begin ${functionName}`);
+        }
     }
 
     /**
@@ -147,7 +151,9 @@
      * @param {string} functionName - Name of the function being exited
      */
     function logFunctionEnd(functionName) {
-        console.log(`${logBase}: end ${functionName}`);
+        if (isDebug) {
+            console.log(`${logBase}: end ${functionName}`);
+        }
     }
 
     /**
@@ -211,7 +217,7 @@
         logError(`  window.location.href: ${window.location.href}`);
         
         // Show debug dialog if in debug mode
-        if (isDebug) {
+        // if (isDebug) {
             const debugMessage = 
                 `URL Validation Failed!\n\n` +
                 `Source: ${source}\n` +
@@ -235,7 +241,7 @@
                 console.log('Debug context:', { url, anchor, event, source });
                 debugger; // Breakpoint for debugging
             }
-        }
+        // }
         
         logFunctionEnd('validateUrl');
         return false;
