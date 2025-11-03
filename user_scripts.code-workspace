@@ -1,13 +1,12 @@
 {
-	"folders": [
-		{
-			"name": ".ai",
-			"path": "../../../../../.ai"
-		},
-		{
-			"name": "user_scripts",
-			"path": "."
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "name": "user_scripts",
+      "path": "."
+    },
+    {
+      "path": ".ai"
+    }
+  ],
+  "settings": {}
 }
