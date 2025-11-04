@@ -260,6 +260,8 @@ BTW I ran into some rate limiting problems while developing amazon_tools.js, so 
 Let's explore building a reusable "amazon toolkit" (meaning a class / library / framework). 
 IE: a piece of code that that has a simplified public interface and which encasuplates the complexityies and implementation details. 
 
+Ideally we implement this "amazon toolkit", then we can update our userscript to consume it later. 
+
 ## Convention
 This "toolkit" should follow our AI instructions for userscripts (`.github/instructions/userscript-conventions.instructions.md`) even if it might be general javascript file. 
 * re-read our AI instructions for userscript at `.github/instructions/userscript-conventions.instructions.md`, then apply it to this "toolkit" 
@@ -269,6 +271,7 @@ This "toolkit" should be consumable from userscript, javascript, and node script
 * IE: let's write it with compaitble tools (whicih I think is already covered in `docs/notes/amazon_url/AMAZON_PRODUCT_SCRAPING_GUIDE.md`)
 
 ## Interface
+
 This "toolkit" should have public APIs for:
 * everything that `docs/references/amazon_fetch/amazon_tools2.js` can do
 * everything outlined in `docs/notes/amazon_url/AMAZON_PRODUCT_SCRAPING_GUIDE.md`
@@ -300,8 +303,18 @@ An re-read these scripts (which will be updated to use this "amazon toolkit" in 
 * Write the new "amazon toolkit" files under the newly created dir: `amazon_toolkit/**`, which you can rename to reflect ^.
 * Do not simply copy/paste the code from existing scripts as that code may not be compaitble, may be buggy, and does not follow the conventions outlined in AI instructions.  
     * Analyze each dataSource (listed below), ensure that all code conforms to the AI instructions. 
-* DO NOT modify any other files during this phase, only write our new toolkit code and (if helpful) a markdown to reflect what's done and what's left to do. 
 
+* DO NOT modify any other files during this phase, only write our new toolkit code and (if helpful) a markdown to reflect what's done and what's left to do. 
+### NameSpaces
+I think it is wise to design this "toolkit" with what I'm going to call namespaces. Here is very rough idea. 
+* amazon_toolkit/product_extractor
+* amazon_toolkit/store_extractor
+* amazon_toolkit/url_toolbox - funtions that take in data structs from:
+    * product_extractor
+    * store_extractor
+    * html anchors (this refers what we currently do in "opt+z+click" on anchor)
+
+let's explore this idea. Ask me questions
 
 ---
 
@@ -331,3 +344,17 @@ Do not simply copy/paste the code. Analyze each piece, rewrite it according to t
 
 1. sure, let's start with that. Though there will be more shortening to do later
 2. `/dp/{ASIN}` or one of the other 2 bare formats according to `## Product URLs` in `docs/notes/amazon/AMAZON_URL_ANATOMY.md`. 
+
+
+---
+
+* why is `function extractASIN(doc, url)` in shared_extractor? It's product releated and I would think goes in product_extractor (maybe I'm wrong)
+
+
+* If these functions remain in share_extractor the I ask that you be more specific with function names. Here are a few examples:
+    * function extractASIN(doc, url) -> function extractProductASIN(doc, url)
+    * function extractTitle(doc) -> function extractProductTitle(doc)
+    * function extractBrand(doc) -> function extractProductBrand(doc)
+
+
+* I feel like `dom_helpers.js` and `logging_helpers.js` are not amazon specific and could be very useful for future userscripts that are written in this repo (since AI instruction will always call for these thing). We should move these to their own "library". I already made a directory for it: `userscript_common`
