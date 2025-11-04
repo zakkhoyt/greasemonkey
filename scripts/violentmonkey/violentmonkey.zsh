@@ -344,7 +344,7 @@ open "$script_url" || {
   exit $exit_code
 }
 
-
+# TODO: zakkhoyt P1 - Open webpage (that the script affects), in a browser.
 
 # Display instructions
 slog_se ""

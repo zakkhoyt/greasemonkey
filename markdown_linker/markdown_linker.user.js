@@ -75,7 +75,7 @@
     
     // Enable debug mode to show error dialogs with debugger option
     // Type: boolean
-    const isDebug = false;
+    const isDebug = true;
     
     // Script identifier prefix for all console.log statements
     // Type: string
@@ -1057,7 +1057,7 @@
         logFunctionEnd('showNotification');
     }
 
-    // Add CSS keyframe animations for notification fade in/out
+    // Add CSS keyframe animations for notification fade in/out and click feedback
     // Must be injected into document <head> to apply to dynamically created elements
     // Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes
     log('Will add CSS keyframe animations');
@@ -1077,12 +1077,101 @@
             from { opacity: 1; }
             to { opacity: 0; }
         }
+        @keyframes mdLinkerClickPulse {
+            0% { 
+                transform: scale(1);
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 12px rgba(76, 175, 80, 0.3);
+            }
+            100% { 
+                transform: scale(1.4);
+                opacity: 0;
+                box-shadow: 0 0 0 20px rgba(76, 175, 80, 0);
+            }
+        }
     `;
     
     // appendChild adds style element to <head>, making animations available globally
     // Type: void
     document.head.appendChild(style);
     log('Did add CSS keyframe animations');
+
+    // ============================================================================
+    // CLICK FEEDBACK ANIMATION
+    // ============================================================================
+
+    /**
+     * Displays a visual click feedback animation at the cursor position
+     * Used during Alt+Z+Click to provide immediate visual feedback
+     * Creates a brief pulse animation that expands and fades out
+     * @param {number} x - X coordinate for animation center (clientX from event)
+     * @param {number} y - Y coordinate for animation center (clientY from event)
+     * 
+     * Animation features:
+     * - Green circular pulse that expands outward
+     * - Box shadow grows and fades
+     * - Total duration 600ms for quick feedback without being distracting
+     * - Fixed positioning so it persists across page scroll
+     * 
+     * Parameter types:
+     * - x: number (pixel coordinate from MouseEvent.clientX)
+     * - y: number (pixel coordinate from MouseEvent.clientY)
+     * Return type: void (undefined)
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/createElement
+     * Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes
+     */
+    function showClickFeedback(x, y) {
+        logFunctionBegin('showClickFeedback');
+        log(`Will create click feedback animation at position (${x}, ${y})`);
+        
+        // Type: HTMLDivElement
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLDivElement
+        const feedback = document.createElement('div');
+        
+        // Position at cursor, center the element by offsetting by half its size
+        // Fixed positioning means position is relative to viewport, not document
+        // z-index 999998 places it below the menu (999999) but above page content
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style
+        feedback.style.cssText = `
+            position: fixed;
+            left: ${x - 12}px;
+            top: ${y - 12}px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4CAF50;
+            z-index: 999998;
+            pointer-events: none;
+            animation: mdLinkerClickPulse 0.6s ease-out forwards;
+        `;
+        
+        log('Will append click feedback to body');
+        // appendChild adds element to DOM, animation begins immediately
+        // Type: void
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild
+        document.body.appendChild(feedback);
+        log('Did append click feedback to body');
+        
+        log('Will schedule click feedback removal after animation completes');
+        // setTimeout waits for animation duration (600ms) to complete before removing
+        // This prevents memory buildup from persistent DOM elements
+        // Type: number (setTimeout returns a timeout ID, unused here)
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/setTimeout
+        setTimeout(() => {
+            log('Will remove click feedback element');
+            // remove() detaches element from DOM
+            // Type: void
+            // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/remove
+            feedback.remove();
+            log('Did remove click feedback element');
+        }, 600);
+        
+        logFunctionEnd('showClickFeedback');
+    }
 
     // ============================================================================
     // POPUP MENU UI
@@ -1459,8 +1548,8 @@
         // Debug: Log Alt+Z status
         const isAltPressed = event.altKey;
         const isZPressed = isZKeyDown;
-        console.log(`[MARKDOWN_LINKER_DEBUG] Click: altKey=${isAltPressed}, z down=${isZPressed}, buffer active=${isAltZBufferActive}, buffer size=${altZClickBuffer.length}`);
-        
+        log(`Click: altKey=${isAltPressed}, z down=${isZPressed}, buffer active=${isAltZBufferActive}, buffer size=${altZClickBuffer.length}`);
+
         if (!shouldTrigger(event)) {
             log('Should not trigger (Alt key not pressed), returning');
             logFunctionEnd('handleClick');
@@ -1505,6 +1594,10 @@
                 
                 if (isAutoInferMode) {
                     log('In auto-infer mode, will buffer this link');
+                    log('Will show click feedback animation');
+                    showClickFeedback(event.clientX, event.clientY);
+                    log('Did show click feedback animation');
+                    
                     altZClickBuffer.push({ url: targetUrl, anchor: anchor });
                     log(`Buffered link #${altZClickBuffer.length}: "${targetUrl}"`);
                 } else {
@@ -1519,6 +1612,10 @@
                 
                 if (isAutoInferMode) {
                     log('In auto-infer mode, will buffer this link (page URL fallback)');
+                    log('Will show click feedback animation');
+                    showClickFeedback(event.clientX, event.clientY);
+                    log('Did show click feedback animation');
+                    
                     altZClickBuffer.push({ url: targetUrl, anchor: null });
                     log(`Buffered link #${altZClickBuffer.length}: "${targetUrl}"`);
                 } else {
@@ -1536,6 +1633,10 @@
             
             if (isAutoInferMode) {
                 log('In auto-infer mode, will buffer this link (page URL)');
+                log('Will show click feedback animation');
+                showClickFeedback(event.clientX, event.clientY);
+                log('Did show click feedback animation');
+                
                 altZClickBuffer.push({ url: targetUrl, anchor: null });
                 log(`Buffered link #${altZClickBuffer.length}: "${targetUrl}"`);
             } else {

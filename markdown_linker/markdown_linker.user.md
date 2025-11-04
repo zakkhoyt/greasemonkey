@@ -118,9 +118,7 @@ Action Items
 * Anywhere else that could be tricky, or works around some problem, there is a lesson to be learned, etc...
 ```
 
-* [ ] The `M` trigger (alone without a click or being currently hovered over a link) breaks typing. 
-* [ ] inputs: add "From Clipboard" if the clipboard has appropriate content
-* [ ] output format (single, list)
+
 
 
 
@@ -138,7 +136,7 @@ Action Items
 
 econdary Goals
 
-* [ ] if our isDebug flag == true, when writing each console log also write it to some local file, on disk, where you have access to read it. 
+* [X] ~~*if our isDebug flag == true, when writing each console log also write it to some local file, on disk, where you have access to read it.*~~ [2025-11-02] 
     * Be sure to use proper timestamping for each log line. 
     * We could even write a new log file each session (timestamped of course)
     * Maybe `/tmp/userscripts/markdown_linker/logs/markdown_linker_${timestamp}.log`
@@ -167,8 +165,8 @@ econdary Goals
 * [ ] additional title dataSource: Infer from url
     * domain: last path component (sentence case)
     * github specific
+* [ ] inputs: add "From Clipboard" if the clipboard has appropriate content
+* [ ] output format (single, list)
 
-* After the implementation goals are met, it would be nice if this script could work for similar extensions (like `greasemonkey`), more browsers, etc...
- 
+* [ ] After the implementation goals are met, it would be nice if this script could work for similar extensions (like `greasemonkey`), more browsers, etc...
 
-s
