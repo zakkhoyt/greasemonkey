@@ -140,12 +140,15 @@ econdary Goals
     * Be sure to use proper timestamping for each log line. 
     * We could even write a new log file each session (timestamped of course)
     * Maybe `/tmp/userscripts/markdown_linker/logs/markdown_linker_${timestamp}.log`
-* [ ] let's make `opt+z+click` (either on a anchor or off of a anchor) to automatically infer the title in this order:
+* [X] ~~*let's make `opt+z+click` (either on a anchor or off of a anchor) to automatically infer the title in this order:*~~ [2025-11-03]
     * selected text
     * anchor title
+
+* [X] ~~*For the opt+z+click scenario, I'd like some visualt feedback  on each click. Like a little click animation*~~ [2025-11-03]
 * [ ] success banner should preview the output (1 line truncated)
 * [ ] let's add a preference (using violentmonkey API) to let the user define their own "key shortcuts"
     * use the current as default values
+    * let the user type in the keyboard short cut keys for both functions
 * [ ] let's add a preference (using violentmonkey API) for popup menu scaling. 
     * allow a value from 0.5 ... 3.0
     * The default value should be 1.0. and 1.0 should equal the current css & size setttings 
@@ -170,3 +173,61 @@ econdary Goals
 
 * [ ] After the implementation goals are met, it would be nice if this script could work for similar extensions (like `greasemonkey`), more browsers, etc...
 
+
+
+
+
+# amazon
+
+There are few things to address regarding amazon. Before getting into details I dug up some documentations and reference code regarding amazon URLS
+* I've added some notes about amazon URL anatomy, etc..: Please read all files here: `docs/notes/amazon/*`
+* I've also added some useful amazon url breakdown/composition code under: `docs/references/amazon_fetch/**/*`
+* lastly there might be some useful amazon url related code under: `amazon_item_blocker/**/*`
+
+## Shorter Link Titles for amazon
+* shorter titles for amazon products. The titles are much longer than I'd like
+    * Remove things like: ' at Amazon Women’s Clothing store'
+    
+EX:
+* URL: https://www.amazon.com/Xiaoxuemeng-Elastic-Waisted-Palazzo-Coffee-S/dp/B0DFB9X382/?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1
+* current result: [Xiaoxuemeng Womens Baggy Wide Leg Pants Casual Elastic Waisted Palazzo Harem Pants with Pockets(Coffee-S) at Amazon Women’s Clothing store](https://www.amazon.com/Xiaoxuemeng-Elastic-Waisted-Palazzo-Coffee-S/dp/B0DFB9X382/?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1)
+* a bit shorter: [Xiaoxuemeng Womens Baggy Wide Leg Pants Casual Elastic Waisted Palazzo Harem Pants with Pockets(Coffee-S)](https://www.amazon.com/Xiaoxuemeng-Elastic-Waisted-Palazzo-Coffee-S/dp/B0DFB9X382/?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1)
+* even shorter: [Xiaoxuemeng Womens Baggy Wide Leg Pants (Coffee-S)](https://www.amazon.com/Xiaoxuemeng-Elastic-Waisted-Palazzo-Coffee-S/dp/B0DFB9X382/?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1)
+
+
+## amazon urls can be shorter
+The URLS that this script is generating are 
+EX: 
+* This url was output by the current userscript : https://www.amazon.com/Xiaoxuemeng-Elastic-Waisted-Palazzo-Coffee-S/dp/B0DFB9X382/?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1
+* IT can def be shortened to this: https://www.amazon.com/dp/B0DFB9X382?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1
+
+
+## More specific urls / query parameters for amazon
+* When taking link for the current page on amazon sites, products that have color selection, size selection, etc.. the URL doesn't seem to reflect that. We do want to remove tracker information and all unecessary query params, but  we also want to keep size/color type query params. 
+
+EX: 
+Maybe this example doesn't actually have different query parameters. 
+* URL: https://www.amazon.com/Xiaoxuemeng-Elastic-Waisted-Palazzo-Coffee-S/dp/B0DFB9X382/?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1
+* coffee, x-small: [Xiaoxuemeng Womens Baggy Wide Leg Pants Casual Elastic Waisted Palazzo Harem Pants with Pockets(Coffee-S) at Amazon Women’s Clothing store](https://www.amazon.com/Xiaoxuemeng-Elastic-Waisted-Palazzo-Coffee-S/dp/B0DJ75BM9M/?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1)
+* beige, large:    [Xiaoxuemeng Womens Baggy Wide Leg Pants Casual Elastic Waisted Palazzo Harem Pants with Pockets(Coffee-S) at Amazon Women’s Clothing store](https://www.amazon.com/Xiaoxuemeng-Elastic-Waisted-Palazzo-Coffee-S/dp/B0DYNQ33HB/?_encoding=UTF8&content-id=amzn1.sym.cd409af6-99ed-4f1e-ade0-2d3b4623bec0&th=1&psc=1)
+
+
+## Other. 
+
+It might be worth starting to build an amazon_url type class/file at this point since the script is getting pretty big and these changes are just for amazon. 
+
+---
+
+Let's pause here for a moment and do some work in `docs/notes/amazon/AMAZON_URL_QUERY_PARAMETERS.md`. For each list item in `# Mined query parameters`, provide a defintion for what the query parameter means. Consult amazon docs and also coding / hacking websites. I found I had to look at both 
+
+
+Do not delete any list items, only add definitions to them (along with a reference link where you found the data. )
+
+---
+
+I've fixed one of the references that I said I had set up. It's got some javascript code ot do some amazon url mining and you can probably take some tips from it as far as extracting our markdown link titles (for the current-page use case)  
+* `docs/references/amazon_url_miner_node`
+also be sure to read this file specifically: `docs/references/amazon_url_miner_node/amazon_tools.js`
+
+1. sure, let's start with that. Though there will be more shortening to do later
+2. `/dp/{ASIN}` or one of the other 2 bare formats according to `## Product URLs` in `docs/notes/amazon/AMAZON_URL_ANATOMY.md`. 
