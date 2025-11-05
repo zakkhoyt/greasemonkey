@@ -90,21 +90,43 @@ const AmazonToolkit = {
     // Extractors Namespace
     // ========================================================================
     Extractors: {
-        // Shared extraction functions
-        extractASIN: () => {},
-        extractTitle: () => {},
-        extractBrand: () => {},
-        extractDescription: () => {},
-        extractPrice: () => {},
-        extractImageURL: () => {},
-        extractVariant: () => {},
+        // Shared extraction functions (Product-focused)
+        extractProductASIN: () => {},
+        extractProductTitle: () => {},
+        extractProductBrand: () => {},
+        extractProductDescription: () => {},
+        extractProductPrice: () => {},
+        extractProductImageURL: () => {},
+        extractProductVariant: () => {},
+        cleanProductTitle: () => {},
 
-        // Product extraction
+        // Product extraction (main function)
         extractProductData: () => {},
+        
+        // Product extraction (detailed helpers)
+        extractProductPriceData: () => {},
+        extractProductImageData: () => {},
+        extractProductImageID: () => {},
+        extractProductAvailability: () => {},
+        extractProductShipping: () => {},
+        extractProductRating: () => {},
+        parseProductPriceValue: () => {},
+        extractProductCurrency: () => {},
 
-        // Store extraction
+        // Store extraction (main function)
         extractStoreData: () => {},
         isStorePage: () => {},
+        
+        // Store extraction (detailed helpers)
+        extractStoreName: () => {},
+        cleanStoreName: () => {},
+        extractStoreBrandName: () => {},
+        extractStoreDescription: () => {},
+        extractStoreLogo: () => {},
+        extractSellerId: () => {},
+        extractStoreId: () => {},
+        parseStoreURLData: () => {},
+        extractStoreImageID: () => {},
     },
 
     // ========================================================================

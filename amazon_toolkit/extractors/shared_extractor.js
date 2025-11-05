@@ -25,7 +25,7 @@
 // In Node.js, use require/import
 
 /**
- * Extracts Amazon ASIN from various sources
+ * Extracts Amazon product ASIN from various sources
  * ASIN Format: 10-character alphanumeric uppercase identifier
  * 
  * Fallback chain:
@@ -39,10 +39,10 @@
  * @returns {string|null} ASIN or null if not found
  * 
  * @example
- * const asin = extractASIN(document, window.location.href);
+ * const asin = extractProductASIN(document, window.location.href);
  * // Returns: 'B08N5WRWNW'
  */
-function extractASIN(doc, url) {
+function extractProductASIN(doc, url) {
     // Try JSON-LD
     try {
         const jsonLdData = parseJsonLD(doc);
@@ -153,24 +153,29 @@ function extractASIN(doc, url) {
 }
 
 /**
- * Extracts product title from various sources
- * Uses "shortest wins" strategy after cleaning
+ * Extracts product title with comprehensive fallback chain
  * 
- * Fallback chain:
- * 1. JSON-LD name property
- * 2. Meta og:title
- * 3. Meta twitter:title
- * 4. HTML #productTitle
- * 5. HTML title tag
+ * Title hierarchy (in order of reliability):
+ * 1. JSON-LD structured data (name property)
+ * 2. Open Graph meta tag (og:title)
+ * 3. Main title span (#productTitle)
+ * 4. Feature bullets container title
+ * 5. Page title tag (cleaned)
+ * 
+ * Processing:
+ * - Trims whitespace
+ * - Removes bracketed metadata [Sponsored], [Ad]
+ * - Cleans HTML entities
+ * - Strips "Amazon.com:" prefix from title tag
  * 
  * @param {Document} doc - DOM document
- * @returns {string|null} Product title or null if not found
+ * @returns {string|null} Cleaned product title or null if not found
  * 
  * @example
- * const title = extractTitle(document);
- * // Returns: 'Nintendo Switch – OLED Model'
+ * const title = extractProductTitle(document);
+ * // Returns: 'Apple iPhone 15 Pro Max, 256GB, Blue Titanium'
  */
-function extractTitle(doc) {
+function extractProductTitle(doc) {
     const candidates = [];
 
     // Try JSON-LD
@@ -234,7 +239,7 @@ function extractTitle(doc) {
     }
 
     const cleaned = candidates
-        .map(title => cleanTitle(title))
+        .map(title => cleanProductTitle(title))
         .filter(title => title && title.length > 0)
         .sort((a, b) => a.length - b.length); // Shortest first
 
@@ -247,10 +252,10 @@ function extractTitle(doc) {
  * @returns {string} Cleaned title
  * 
  * @example
- * cleanTitle('Amazon.com: Nintendo Switch – OLED Model : Electronics');
+ * cleanProductTitle('Amazon.com: Nintendo Switch – OLED Model : Electronics');
  * // Returns: 'Nintendo Switch – OLED Model'
  */
-function cleanTitle(title) {
+function cleanProductTitle(title) {
     if (!title) return '';
     
     let cleaned = title.trim();
@@ -283,10 +288,10 @@ function cleanTitle(title) {
  * @returns {string|null} Brand name or null if not found
  * 
  * @example
- * const brand = extractBrand(document);
+ * const brand = extractProductBrand(document);
  * // Returns: 'Nintendo'
  */
-function extractBrand(doc) {
+function extractProductBrand(doc) {
     // Try JSON-LD
     try {
         const jsonLdData = parseJsonLD(doc);
@@ -358,10 +363,10 @@ function extractBrand(doc) {
  * @returns {string|null} Description or null if not found
  * 
  * @example
- * const description = extractDescription(document);
+ * const description = extractProductDescription(document);
  * // Returns: 'Meet the newest member of the Nintendo Switch family...'
  */
-function extractDescription(doc) {
+function extractProductDescription(doc) {
     // Try JSON-LD
     try {
         const jsonLdData = parseJsonLD(doc);
@@ -419,10 +424,10 @@ function extractDescription(doc) {
  * @returns {string|null} Price string or null if not found
  * 
  * @example
- * const price = extractPrice(document);
+ * const price = extractProductPrice(document);
  * // Returns: '$349.99'
  */
-function extractPrice(doc) {
+function extractProductPrice(doc) {
     // Try JSON-LD
     try {
         const jsonLdData = parseJsonLD(doc);
@@ -483,10 +488,10 @@ function extractPrice(doc) {
  * @returns {string|null} Image URL or null if not found
  * 
  * @example
- * const imageUrl = extractImageURL(document);
+ * const imageUrl = extractProductImageURL(document);
  * // Returns: 'https://m.media-amazon.com/images/I/61CGHv6kmWL._SL1500_.jpg'
  */
-function extractImageURL(doc) {
+function extractProductImageURL(doc) {
     // Try JSON-LD
     try {
         const jsonLdData = parseJsonLD(doc);
@@ -567,10 +572,10 @@ function extractImageURL(doc) {
  * @returns {Object|null} Variant object with type and value, or null
  * 
  * @example
- * const variant = extractVariant(document);
+ * const variant = extractProductVariant(document);
  * // Returns: { type: 'Color', value: 'White' }
  */
-function extractVariant(doc) {
+function extractProductVariant(doc) {
     try {
         // Try selected variant display
         const selectors = [
@@ -690,13 +695,13 @@ function isAmazonImageURL(value) {
 // Export all extraction functions
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        extractASIN,
-        extractTitle,
-        cleanTitle,
-        extractBrand,
-        extractDescription,
-        extractPrice,
-        extractImageURL,
-        extractVariant
+        extractProductASIN,
+        extractProductTitle,
+        cleanProductTitle,
+        extractProductBrand,
+        extractProductDescription,
+        extractProductPrice,
+        extractProductImageURL,
+        extractProductVariant
     };
 }

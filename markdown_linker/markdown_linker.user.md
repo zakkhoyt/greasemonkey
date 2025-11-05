@@ -348,13 +348,31 @@ Do not simply copy/paste the code. Analyze each piece, rewrite it according to t
 
 ---
 
-* why is `function extractASIN(doc, url)` in shared_extractor? It's product releated and I would think goes in product_extractor (maybe I'm wrong)
+
+I was expecting that these files would contain classes (or most of them would). 
+* Is there a reasoning behind using just a loose collection of functions? 
+* What would consumer code look like? Are these function nested under some namespace when they are called? 
+Let's discuss the pros/cons of such an architecture. 
+* how does public/internal/private scoping work here? I didn't see any of those keywords used. Are they not supported?
+
+Let's discuss writing tests for the amazon and userscript_common libraries. I can provide raw product source code (as files). 
+* What else would you need from me? 
+* how to structure tests for this kind of environment?
+* what does the dir hierarchy look like?
+
+I do have some more things to talk about but lets' cover these two first. 
 
 
-* If these functions remain in share_extractor the I ask that you be more specific with function names. Here are a few examples:
+why is `function extractASIN(doc, url)` in shared_extractor? (and similar question for other product related functions) It's product releated and I would think goes in product_extractor (maybe I'm wrong and it's )
+ If these functions remain in share_extractor the I ask that you be more specific with function names. Here are a few examples:
     * function extractASIN(doc, url) -> function extractProductASIN(doc, url)
     * function extractTitle(doc) -> function extractProductTitle(doc)
     * function extractBrand(doc) -> function extractProductBrand(doc)
+In fact update functions names in all cases where the filename isn't descriptive enough
 
 
 * I feel like `dom_helpers.js` and `logging_helpers.js` are not amazon specific and could be very useful for future userscripts that are written in this repo (since AI instruction will always call for these thing). We should move these to their own "library". I already made a directory for it: `userscript_common`
+
+--- 
+
+I'd prefer that test reside in in the same folder as what they are testing (vs all tests gatherd together under the same dir) > What are some pros/cons?

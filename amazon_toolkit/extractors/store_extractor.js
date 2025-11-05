@@ -328,7 +328,7 @@ function extractStoreLogo(doc) {
                 if (src) {
                     return {
                         url: src,
-                        imageId: extractImageID(src)
+                        imageId: extractStoreImageID(src)
                     };
                 }
             }
@@ -339,7 +339,7 @@ function extractStoreLogo(doc) {
         if (ogImage) {
             return {
                 url: ogImage,
-                imageId: extractImageID(ogImage)
+                imageId: extractStoreImageID(ogImage)
             };
         }
     } catch (error) {
@@ -511,7 +511,7 @@ function isTrackingParameter(key) {
  * @param {string} imageUrl - Image URL
  * @returns {string|null} Image ID or null
  */
-function extractImageID(imageUrl) {
+function extractStoreImageID(imageUrl) {
     if (!imageUrl) return null;
     const match = imageUrl.match(/\/images\/[SI]\/([A-Za-z0-9+_-]+)\./);
     return match ? match[1] : null;
@@ -553,6 +553,6 @@ if (typeof module !== 'undefined' && module.exports) {
         extractStoreId,
         parseStoreURLData,
         isTrackingParameter,
-        extractImageID
+        extractStoreImageID
     };
 }

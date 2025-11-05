@@ -63,12 +63,14 @@ amazon_toolkit/
 │   ├── markdown_generator.js
 │   └── markdown_formatter.js
 ├── helpers/                 # Amazon-specific utilities
-│   ├── dom_helpers.js
-│   ├── logging_helpers.js
 │   └── validation_helpers.js
 ├── index.js                # Main exports
 ├── README.md               # This file
 └── IMPLEMENTATION_STATUS.md # Progress tracking
+
+userscript_common/          # Generic utilities (shared across all userscripts)
+├── dom_helpers.js          # DOM manipulation utilities
+└── logging_helpers.js      # Logging and debugging utilities
 ```
 
 ## Installation

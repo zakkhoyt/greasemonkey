@@ -111,29 +111,29 @@ function extractProductData(source, url) {
     }
 
     // Extract basic data
-    const asin = extractASIN(doc, url);
+    const asin = extractProductASIN(doc, url);
     if (!asin) {
         logWarn('Could not extract ASIN - may not be a product page');
         return null;
     }
 
     // Extract all product properties
-    const title = extractTitle(doc);
-    const brand = extractBrand(doc);
-    const description = extractDescription(doc);
-    const priceData = extractPriceData(doc);
-    const imageData = extractImageData(doc);
-    const variant = extractVariant(doc);
-    const availability = extractAvailability(doc);
-    const shipping = extractShipping(doc);
-    const rating = extractRating(doc);
+    const title = extractProductTitle(doc);
+    const brand = extractProductBrand(doc);
+    const description = extractProductDescription(doc);
+    const priceData = extractProductPriceData(doc);
+    const imageData = extractProductImageData(doc);
+    const variant = extractProductVariant(doc);
+    const availability = extractProductAvailability(doc);
+    const shipping = extractProductShipping(doc);
+    const rating = extractProductRating(doc);
     const urlData = parseURLData(url, doc);
 
     // Build comprehensive data structure
     const productData = {
         asin,
         title,
-        titleCleaned: title ? cleanTitle(title) : null,
+        titleCleaned: title ? cleanProductTitle(title) : null,
         brand,
         description,
         price: priceData,
@@ -172,16 +172,16 @@ function extractProductData(source, url) {
  *   savingsPercent: '3%'
  * }
  */
-function extractPriceData(doc) {
-    const currentPrice = extractPrice(doc);
+function extractProductPriceData(doc) {
+    const currentPrice = extractProductPrice(doc);
     if (!currentPrice) {
         return null;
     }
 
     const priceData = {
         current: currentPrice,
-        currentValue: parsePriceValue(currentPrice),
-        currency: extractCurrency(currentPrice)
+        currentValue: parseProductPriceValue(currentPrice),
+        currency: extractProductCurrency(currentPrice)
     };
 
     // Try to extract list price (if on sale)
@@ -191,7 +191,7 @@ function extractPriceData(doc) {
             const listPrice = safeText(listPriceElement);
             if (listPrice && listPrice !== currentPrice) {
                 priceData.list = listPrice;
-                priceData.listValue = parsePriceValue(listPrice);
+                priceData.listValue = parseProductPriceValue(listPrice);
                 
                 // Calculate savings
                 if (priceData.listValue && priceData.currentValue) {
@@ -213,7 +213,7 @@ function extractPriceData(doc) {
  * @param {string} priceStr - Price string like '$349.99'
  * @returns {number|null} Numeric price value
  */
-function parsePriceValue(priceStr) {
+function parseProductPriceValue(priceStr) {
     if (!priceStr) return null;
     const cleaned = priceStr.replace(/[$£€¥₹,\s]/g, '');
     const value = parseFloat(cleaned);
@@ -225,7 +225,7 @@ function parsePriceValue(priceStr) {
  * @param {string} priceStr - Price string like '$349.99'
  * @returns {string} Currency symbol or '$'
  */
-function extractCurrency(priceStr) {
+function extractProductCurrency(priceStr) {
     if (!priceStr) return '$';
     const match = priceStr.match(/^([£€¥₹$])/);
     return match ? match[1] : '$';
@@ -252,7 +252,7 @@ function extractCurrency(priceStr) {
  *   }
  * }
  */
-function extractImageData(doc) {
+function extractProductImageData(doc) {
     const imageData = {
         primary: null,
         primaryId: null,
@@ -261,10 +261,10 @@ function extractImageData(doc) {
     };
 
     // Extract primary image
-    const primaryURL = extractImageURL(doc);
+    const primaryURL = extractProductImageURL(doc);
     if (primaryURL) {
         imageData.primary = primaryURL;
-        imageData.primaryId = extractImageID(primaryURL);
+        imageData.primaryId = extractProductImageID(primaryURL);
     }
 
     // Extract additional images from image gallery
@@ -273,7 +273,7 @@ function extractImageData(doc) {
         for (const thumb of thumbnails) {
             const src = safeAttr(thumb, 'src');
             if (src && isAmazonImageURL(src)) {
-                const imageId = extractImageID(src);
+                const imageId = extractProductImageID(src);
                 if (imageId && imageId !== imageData.primaryId) {
                     imageData.additional.push({
                         url: src,
@@ -293,7 +293,7 @@ function extractImageData(doc) {
             const src = safeAttr(img, 'src');
             const alt = safeAttr(img, 'alt');
             if (src && alt && isAmazonImageURL(src)) {
-                const imageId = extractImageID(src);
+                const imageId = extractProductImageID(src);
                 if (imageId) {
                     imageData.variants[alt] = {
                         url: src,
@@ -316,10 +316,10 @@ function extractImageData(doc) {
  * @returns {string|null} Image ID or null
  * 
  * @example
- * extractImageID('https://m.media-amazon.com/images/I/61CGHv6kmWL._SL1500_.jpg')
+ * extractProductImageID('https://m.media-amazon.com/images/I/61CGHv6kmWL._SL1500_.jpg')
  * // Returns: '61CGHv6kmWL'
  */
-function extractImageID(imageUrl) {
+function extractProductImageID(imageUrl) {
     if (!imageUrl) return null;
     const match = imageUrl.match(/\/images\/I\/([A-Za-z0-9+_-]+)\./);
     return match ? match[1] : null;
@@ -330,7 +330,7 @@ function extractImageID(imageUrl) {
  * @param {Document} doc - DOM document
  * @returns {string|null} Availability status
  */
-function extractAvailability(doc) {
+function extractProductAvailability(doc) {
     try {
         const selectors = [
             '#availability span',
@@ -357,7 +357,7 @@ function extractAvailability(doc) {
  * @param {Document} doc - DOM document
  * @returns {string|null} Shipping information
  */
-function extractShipping(doc) {
+function extractProductShipping(doc) {
     try {
         const selectors = [
             '#deliveryBlockMessage',
@@ -393,7 +393,7 @@ function extractShipping(doc) {
  *   stars: '4.8 out of 5 stars'
  * }
  */
-function extractRating(doc) {
+function extractProductRating(doc) {
     try {
         // Extract rating value
         const ratingElement = safeQuery('[data-hook="rating-out-of-text"]', doc) ||
@@ -539,14 +539,14 @@ function parseHTMLString(htmlString) {
 }
 
 // Placeholder functions - these would be imported from shared_extractor and helpers
-function extractASIN(doc, url) { /* Implementation in shared_extractor.js */ return null; }
-function extractTitle(doc) { /* Implementation in shared_extractor.js */ return null; }
-function cleanTitle(title) { /* Implementation in shared_extractor.js */ return title; }
-function extractBrand(doc) { /* Implementation in shared_extractor.js */ return null; }
-function extractDescription(doc) { /* Implementation in shared_extractor.js */ return null; }
-function extractPrice(doc) { /* Implementation in shared_extractor.js */ return null; }
-function extractImageURL(doc) { /* Implementation in shared_extractor.js */ return null; }
-function extractVariant(doc) { /* Implementation in shared_extractor.js */ return null; }
+function extractProductASIN(doc, url) { /* Implementation in shared_extractor.js */ return null; }
+function extractProductTitle(doc) { /* Implementation in shared_extractor.js */ return null; }
+function cleanProductTitle(title) { /* Implementation in shared_extractor.js */ return title; }
+function extractProductBrand(doc) { /* Implementation in shared_extractor.js */ return null; }
+function extractProductDescription(doc) { /* Implementation in shared_extractor.js */ return null; }
+function extractProductPrice(doc) { /* Implementation in shared_extractor.js */ return null; }
+function extractProductImageURL(doc) { /* Implementation in shared_extractor.js */ return null; }
+function extractProductVariant(doc) { /* Implementation in shared_extractor.js */ return null; }
 function safeQuery(selector, context) { /* Implementation in dom_helpers.js */ return null; }
 function safeQueryAll(selector, context) { /* Implementation in dom_helpers.js */ return []; }
 function safeText(element) { /* Implementation in dom_helpers.js */ return null; }
@@ -559,12 +559,14 @@ function logError(...args) { /* Implementation in logging_helpers.js */ }
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         extractProductData,
-        extractPriceData,
-        extractImageData,
-        extractImageID,
-        extractAvailability,
-        extractShipping,
-        extractRating,
+        extractProductPriceData,
+        extractProductImageData,
+        extractProductImageID,
+        extractProductAvailability,
+        extractProductShipping,
+        extractProductRating,
+        parseProductPriceValue,
+        extractProductCurrency,
         parseURLData,
         isVariantParameter,
         isTrackingParameter
