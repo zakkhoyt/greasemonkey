@@ -2,13 +2,6 @@
   "folders": [
     {
       "path": "."
-    },
-    {
-      "path": "../../../../../.ai"
-    },
-    {
-      "path": ".ai",
-      "name": "AI Documentation"
     }
   ],
   "settings": {}
