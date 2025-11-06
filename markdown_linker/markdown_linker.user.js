@@ -59,6 +59,9 @@
  * 
  * BROWSER COMPATIBILITY:
  * Tested on Firefox 144.0.2 with ViolentMonkey 2.31.0 on macOS
+ * 
+ * TODO / IDEAS:
+ *   - See sibling file: markdown_linker.user.md
  */
 
 
@@ -1188,7 +1191,7 @@
      * JavaScript boolean: Primitive type with two values: true or false
      * MouseEvent coordinates: clientX/clientY are relative to viewport
      * getBoundingClientRect() used for position adjustment
-     * Parameter types:
+     * Parameter types:sour
      * - x: number (pixel coordinate from MouseEvent.clientX)
      * - y: number (pixel coordinate from MouseEvent.clientY)
      * - isAnchor: boolean (JavaScript primitive boolean type)
